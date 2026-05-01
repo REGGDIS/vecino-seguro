@@ -17,7 +17,8 @@ Este repositorio contiene la estructura inicial del proyecto VecinoSeguro, desar
 - MySQL
 - Python
 - FastAPI
-- PySide6
+- PySide6 recomendado para la app desktop
+- Tkinter como alternativa para la app desktop
 - Expo
 - React Native
 - TypeScript
@@ -28,7 +29,7 @@ Este repositorio contiene la estructura inicial del proyecto VecinoSeguro, desar
 ```text
 vecino-seguro/
 ├── backend/   # API centralizada con Python + FastAPI
-├── desktop/   # Aplicación de escritorio con Python + PySide6
+├── desktop/   # Aplicación de escritorio con Python + PySide6 recomendado o Tkinter
 ├── mobile/    # Aplicación móvil con Expo + React Native + TypeScript
 ├── database/  # Scripts iniciales para MySQL
 ├── docs/      # Documentación técnica y de gestión
@@ -56,6 +57,8 @@ GET /health
 
 ### Desktop
 
+La aplicación desktop está preparada inicialmente para PySide6, pero la arquitectura se mantiene modular para permitir una adaptación a Tkinter si el equipo decide utilizar esa alternativa.
+
 ```bash
 cd desktop
 python -m venv .venv
@@ -76,4 +79,3 @@ Configura la URL del backend copiando `mobile/.env.example` a un archivo `.env` 
 ## Estado del proyecto
 
 Estructura inicial lista para el primer commit y para comenzar el desarrollo modular del prototipo.
-
