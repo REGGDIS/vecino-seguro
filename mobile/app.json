@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "VecinoSeguro",
+    "slug": "vecino-seguro",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "vecinoseguro",
+    "userInterfaceStyle": "automatic",
+    "platforms": ["ios", "android", "web"]
+  }
+}
+

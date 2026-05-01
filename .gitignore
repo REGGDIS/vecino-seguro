@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+.env
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+build/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+
+# Bases de datos y temporales
+*.sqlite3
+*.db
+logs/
+*.log
+

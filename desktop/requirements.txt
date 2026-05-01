@@ -1,0 +1,4 @@
+PySide6  # Recomendado para la interfaz desktop; si el equipo usa Tkinter, puede eliminarse porque Tkinter viene incluido con Python.
+requests
+python-dotenv
+pytest
