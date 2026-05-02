@@ -1,8 +1,7 @@
 """Vista base del panel principal.
 
 Esta pantalla mostrará en el futuro un resumen de emergencias, estados recientes
-y acciones disponibles para vecinos o administradores. La implementación visual
-puede mantenerse en PySide6 o adaptarse a Tkinter sin cambiar controladores.
+y acciones disponibles para vecinos o administradores usando componentes PySide6.
 """
 
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget

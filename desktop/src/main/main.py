@@ -1,8 +1,4 @@
-"""Punto de entrada de la interfaz desktop en Python de VecinoSeguro.
-
-La implementación base usa PySide6 como opción recomendada. Si el equipo migra
-a Tkinter, este archivo puede adaptarse manteniendo el rol de punto de entrada.
-"""
+"""Punto de entrada de la interfaz desktop PySide6 de VecinoSeguro."""
 
 import sys
 from pathlib import Path

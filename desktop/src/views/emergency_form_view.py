@@ -1,8 +1,8 @@
 """Vista base para registrar emergencias.
 
 Campos futuros sugeridos: tipo, descripción, ubicación y nivel de urgencia.
-La estructura actual usa PySide6 como base recomendada y puede migrarse a
-Tkinter manteniendo la misma responsabilidad de vista.
+La estructura actual usa PySide6 y mantiene la responsabilidad visual separada
+de controladores y servicios.
 """
 
 from PySide6.QtWidgets import QLabel, QLineEdit, QTextEdit, QVBoxLayout, QWidget

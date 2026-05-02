@@ -1,6 +1,6 @@
 # Aplicación desktop VecinoSeguro
 
-Este directorio contiene la estructura inicial de la aplicación de escritorio en Python. La opción recomendada para el prototipo es PySide6, porque permite construir interfaces profesionales y mantenibles; alternativamente, el equipo puede migrar a Tkinter manteniendo la misma separación entre vistas, controladores, servicios y repositorios.
+Este directorio contiene la estructura inicial de la aplicación de escritorio de VecinoSeguro. La app desktop se desarrollará oficialmente con Python + PySide6, usando una separación clara entre interfaz visual, coordinación de eventos, comunicación con la API y recursos de presentación.
 
 ## Instalación
 
@@ -24,4 +24,13 @@ python src/main/main.py
 
 ## Organización
 
-La aplicación separa vistas, controladores, servicios, repositorios, configuración y constantes para favorecer mantenibilidad y principios SOLID. Las vistas actuales usan PySide6 como base recomendada, pero están aisladas del resto de capas para que puedan reemplazarse por Tkinter sin rehacer la lógica de controladores o comunicación con el backend.
+La aplicación separa responsabilidades para favorecer mantenibilidad y principios SOLID:
+
+- `views/`: pantallas PySide6 como login, panel principal y formularios.
+- `controllers/`: coordinación entre eventos de la interfaz y servicios de aplicación.
+- `services/`: comunicación con la API FastAPI y lógica de apoyo externa a las vistas.
+- `assets/`: recursos visuales como íconos, imágenes o fuentes.
+- `styles/`: estilos QSS para centralizar la identidad visual de la interfaz.
+- `repositories/`, `config/` y `core/`: puntos de apoyo para configuración, constantes y adaptadores cuando el prototipo los requiera.
+
+Las vistas PySide6 deben mantenerse enfocadas en construir y actualizar la interfaz. La lógica de negocio y el consumo de API deben residir en controladores y servicios.

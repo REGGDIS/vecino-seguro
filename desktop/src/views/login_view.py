@@ -1,8 +1,7 @@
 """Vista inicial de login.
 
-El inicio de sesión usará RUT chileno y contraseña. Esta vista usa PySide6 como
-base recomendada, pero puede adaptarse a Tkinter conservando la separación entre
-vista, controlador y servicios.
+El inicio de sesión usará RUT chileno y contraseña. Esta vista usa PySide6 y
+debe delegar la lógica de autenticación a controladores y servicios.
 """
 
 from PySide6.QtWidgets import QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget

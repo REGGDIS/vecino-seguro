@@ -1,7 +1,7 @@
 """Controlador base para creación y listado de emergencias.
 
-La lógica del controlador se mantiene independiente del toolkit visual para
-facilitar el uso de PySide6 o Tkinter.
+La lógica del controlador se mantiene separada de las vistas PySide6 para que
+los servicios y reglas de negocio no dependan directamente de la interfaz.
 """
 
 

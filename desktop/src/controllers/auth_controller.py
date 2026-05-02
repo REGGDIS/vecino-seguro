@@ -1,7 +1,7 @@
 """Controlador base para eventos de autenticación.
 
-Este controlador no depende de PySide6 ni de Tkinter; su objetivo es coordinar
-la interfaz desktop en Python con los servicios de la aplicación.
+Este controlador coordina la interfaz desktop PySide6 con los servicios de la
+aplicación, evitando que la vista concentre lógica de negocio.
 """
 
 from src.services.api_client import ApiClient
