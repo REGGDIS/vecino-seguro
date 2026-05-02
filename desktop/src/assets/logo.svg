@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" width="200" height="220">
+  <!-- ========== ESCUDO ========== -->
+  <!-- Mitad izquierda del borde (azul) -->
+  <path d="M 100 8
+           L 20 28
+           L 20 95
+           C 20 145, 50 185, 100 210
+           L 100 8 Z"
+        fill="#1B4F8C"/>
+  <!-- Mitad derecha del borde (verde) -->
+  <path d="M 100 8
+           L 180 28
+           L 180 95
+           C 180 145, 150 185, 100 210
+           L 100 8 Z"
+        fill="#34A853"/>
+  <!-- Interior blanco del escudo -->
+  <path d="M 100 18
+           L 28 36
+           L 28 95
+           C 28 140, 55 178, 100 200
+           C 145 178, 172 140, 172 95
+           L 172 36
+           L 100 18 Z"
+        fill="#FFFFFF"/>
+
+  <!-- ========== CURVA SEPARADORA VERDE ========== -->
+  <path d="M 32 110
+           C 60 138, 140 138, 168 110"
+        fill="none" stroke="#34A853" stroke-width="6"
+        stroke-linecap="round"/>
+
+  <!-- ========== CASAS ========== -->
+  <!-- Casa izquierda (pequeña) -->
+  <g fill="#0F3866">
+    <!-- Cuerpo -->
+    <rect x="40" y="68" width="32" height="38"/>
+    <!-- Techo -->
+    <polygon points="36,70 56,52 76,70"/>
+  </g>
+  <!-- Ventana casa izquierda -->
+  <rect x="50" y="80" width="12" height="14" fill="#FFFFFF"/>
+
+  <!-- Casa derecha (pequeña) -->
+  <g fill="#0F3866">
+    <rect x="128" y="68" width="32" height="38"/>
+    <polygon points="124,70 144,52 164,70"/>
+  </g>
+  <!-- Ventana casa derecha -->
+  <rect x="138" y="80" width="12" height="14" fill="#FFFFFF"/>
+
+  <!-- Casa central (grande) -->
+  <g fill="#0F3866">
+    <!-- Cuerpo -->
+    <rect x="72" y="60" width="56" height="46"/>
+    <!-- Techo principal -->
+    <polygon points="66,62 100,32 134,62"/>
+    <!-- Chimenea -->
+    <rect x="115" y="38" width="8" height="14"/>
+  </g>
+  <!-- Ventana central de 4 paneles -->
+  <g fill="#FFFFFF">
+    <rect x="86" y="74" width="28" height="24"/>
+  </g>
+  <g fill="#0F3866">
+    <!-- Cruz divisoria de la ventana -->
+    <rect x="99" y="74" width="2" height="24"/>
+    <rect x="86" y="85" width="28" height="2"/>
+  </g>
+
+  <!-- ========== FIGURAS HUMANAS ========== -->
+  <!-- Persona izquierda (verde) -->
+  <circle cx="62" cy="138" r="9" fill="#34A853"/>
+  <path d="M 50 168
+           C 50 158, 56 152, 62 152
+           C 68 152, 74 158, 74 168
+           L 74 174
+           L 50 174 Z"
+        fill="#34A853"/>
+
+  <!-- Persona derecha (verde) -->
+  <circle cx="138" cy="138" r="9" fill="#34A853"/>
+  <path d="M 126 168
+           C 126 158, 132 152, 138 152
+           C 144 152, 150 158, 150 168
+           L 150 174
+           L 126 174 Z"
+        fill="#34A853"/>
+
+  <!-- Persona central (azul) - cabeza más grande, cuerpo es el pin -->
+  <circle cx="100" cy="135" r="11" fill="#1B4F8C"/>
+
+  <!-- ========== PIN DE UBICACIÓN ========== -->
+  <path d="M 100 150
+           C 86 150, 78 161, 78 173
+           C 78 188, 100 200, 100 200
+           C 100 200, 122 188, 122 173
+           C 122 161, 114 150, 100 150 Z"
+        fill="#1B4F8C"/>
+  <!-- Círculo blanco interior del pin -->
+  <circle cx="100" cy="173" r="8" fill="#FFFFFF"/>
+</svg>
