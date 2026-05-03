@@ -1,0 +1,233 @@
+/* ============================================================
+   VecinoSeguro - Hoja de estilos global (main.qss)
+
+   Paleta y tokens basados en la Guía de Imagen Corporativa UI
+   (Mayo 2026). Cualquier ajuste de identidad visual debe
+   realizarse aquí y replicarse en core/colors.py.
+   ============================================================ */
+
+/* === Reset de fondo aplicado solo a contenedores raíz === */
+QMainWindow, QWidget#central {
+    background-color: #F4F8FB;
+}
+
+QLabel, QFrame {
+    color: #102A43;
+    font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 13px;
+}
+
+QWidget {
+    font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 13px;
+}
+
+/* === Tarjetas y paneles === */
+QFrame#card {
+    background-color: #FFFFFF;
+    border: 1px solid #D9E2EC;
+    border-radius: 10px;
+}
+QFrame#card QLabel,
+QFrame#card QTextEdit,
+QFrame#kpiCard QLabel {
+    background-color: transparent;
+    border: none;
+}
+
+QFrame#sidebar {
+    background-color: #073B6B;
+    border: none;
+}
+QFrame#sidebar QLabel {
+    background-color: transparent;
+    border: none;
+    color: #FFFFFF;
+}
+
+QFrame#header {
+    background-color: #FFFFFF;
+    border-bottom: 1px solid #D9E2EC;
+}
+QFrame#header QLabel {
+    background-color: transparent;
+    border: none;
+}
+
+/* === Tipografía === */
+QLabel#h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #073B6B;
+}
+
+QLabel#h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #102A43;
+}
+
+QLabel#h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #102A43;
+}
+
+QLabel#muted {
+    color: #52616B;
+    font-size: 12px;
+}
+
+/* === Inputs === */
+QLineEdit, QComboBox, QTextEdit, QSpinBox {
+    background-color: #FFFFFF;
+    border: 1.5px solid #D9E2EC;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #102A43;
+    min-height: 18px;
+}
+
+QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
+    border: 1.5px solid #005A9C;
+}
+
+QLineEdit:disabled, QComboBox:disabled, QTextEdit:disabled {
+    background-color: #F4F8FB;
+    color: #52616B;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    border: 1px solid #D9E2EC;
+    selection-background-color: #005A9C;
+    selection-color: #FFFFFF;
+    padding: 4px;
+}
+
+/* === Panel del administrador === */
+QFrame#adminPanel {
+    background-color: #FFF4E5;
+    border: 1px solid #F2A900;
+    border-radius: 8px;
+}
+QFrame#adminPanel QLabel {
+    background-color: transparent;
+    border: none;
+}
+
+/* === Tarjeta de acción del dashboard === */
+QFrame#actionCard {
+    background-color: #FFFFFF;
+    border: 1px solid #D9E2EC;
+    border-radius: 10px;
+}
+QFrame#actionCard:hover {
+    border: 1.5px solid #005A9C;
+}
+
+/* === Fila de reporte reciente del dashboard === */
+QFrame#recentRow {
+    background-color: #FFFFFF;
+    border: 1px solid #D9E2EC;
+    border-radius: 8px;
+}
+QFrame#recentRow QLabel {
+    background-color: transparent;
+    border: none;
+}
+
+/* === Tarjeta de usuario en sidebar === */
+QFrame#userCard {
+    background-color: rgba(0, 90, 156, 0.4);
+    border: none;
+    border-radius: 8px;
+}
+QFrame#userCard QLabel {
+    background-color: transparent;
+    border: none;
+    color: #FFFFFF;
+}
+
+/* === Tarjeta KPI === */
+QFrame#kpiCard {
+    background-color: #FFFFFF;
+    border: 1px solid #D9E2EC;
+    border-radius: 10px;
+    padding: 16px;
+}
+
+QLabel#kpiLabel {
+    color: #52616B;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+/* === Tabla === */
+QTableWidget {
+    background-color: #FFFFFF;
+    border: 1px solid #D9E2EC;
+    border-radius: 8px;
+    gridline-color: #EEF1F6;
+    selection-background-color: #E5F0FB;
+    selection-color: #073B6B;
+}
+
+QHeaderView::section {
+    background-color: #F4F8FB;
+    color: #52616B;
+    border: none;
+    border-bottom: 2px solid #D9E2EC;
+    padding: 10px 12px;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+QTableWidget::item {
+    padding: 10px;
+    border-bottom: 1px solid #EEF1F6;
+}
+
+QTableWidget::item:selected {
+    background-color: #E5F0FB;
+    color: #073B6B;
+}
+
+/* === Mensaje de error === */
+QLabel#errorMsg {
+    color: #D92D20;
+    background-color: #FED7D7;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* === ScrollArea / ScrollBar === */
+QScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
+QScrollBar:vertical {
+    background: #F4F8FB;
+    width: 10px;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical {
+    background: #C8D4E5;
+    border-radius: 5px;
+    min-height: 30px;
+}
+QScrollBar::handle:vertical:hover { background: #6B85A8; }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
