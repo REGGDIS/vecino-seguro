@@ -88,9 +88,14 @@ class DashboardView(QWidget):
 
         self.recientes_box = QVBoxLayout()
         self.recientes_box.setSpacing(8)
+        # SOLUCIÓN 1: Alinear los reportes hacia arriba para que no se esparzan
+        # al agrandar la ventana (soluciona tu segunda imagen).
+        self.recientes_box.setAlignment(Qt.AlignTop) 
+
         self.recientes_container = QFrame()
         self.recientes_container.setLayout(self.recientes_box)
         layout.addWidget(self.recientes_container)
+        
         layout.addStretch()
 
     # ---- Helpers de construcción de tarjetas ----
@@ -151,6 +156,12 @@ class DashboardView(QWidget):
     def _mk_reciente_row(self, emergencia) -> QFrame:
         f = QFrame()
         f.setObjectName("recentRow")
+        
+        # SOLUCIÓN 2: Altura fija (ni mínima ni máxima). La tarjeta será
+        # exactamente de 72 píxeles de alto, pase lo que pase con la ventana.
+        # Esto evita que se aplasten y se dibujen encima de otras (soluciona la imagen 1).
+        f.setFixedHeight(72)
+
         l = QHBoxLayout(f)
         l.setContentsMargins(16, 12, 16, 12)
         l.setSpacing(12)
@@ -159,6 +170,7 @@ class DashboardView(QWidget):
             "Crítica": "#D92D20", "Alta": "#F2A900",
             "Media": "#D69E2E",   "Baja": "#22A63A",
         }.get(emergencia.nivel_urgencia.value, "#52616B")
+        
         dot = QLabel()
         dot.setStyleSheet(
             f"background-color: {color_urg}; border-radius: 5px; "
@@ -169,12 +181,15 @@ class DashboardView(QWidget):
 
         text_box = QVBoxLayout()
         text_box.setSpacing(2)
+        
         titulo = QLabel(f"{emergencia.tipo.value} · {emergencia.ubicacion}")
         titulo.setStyleSheet(
             "font-size: 13px; font-weight: 600; color: #102A43; "
             "background: transparent; border: none;"
         )
+        # OJO: Sin WordWrap para forzar que el texto no intente deformar la altura de la tarjeta.
         text_box.addWidget(titulo)
+        
         meta = QLabel(
             f"#{emergencia.id} · {emergencia.nombre_reportante} · "
             f"{emergencia.fecha_reporte.strftime('%d-%m-%Y %H:%M')}"
@@ -182,11 +197,12 @@ class DashboardView(QWidget):
         meta.setStyleSheet(
             "font-size: 11px; color: #52616B; background: transparent; border: none;"
         )
+        # OJO: Sin WordWrap aquí también.
         text_box.addWidget(meta)
+        
         l.addLayout(text_box)
         l.addStretch()
 
-        # Badge de estado mediante widget reutilizable
         badge = crear_badge_estado(emergencia.estado.value)
         l.addWidget(badge)
         return f

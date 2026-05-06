@@ -1,30 +1,31 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
-// Punto inicial de la app móvil. Luego se conectará a navegación y pantallas reales.
+import { EmergencyFormScreen } from "../src/screens/EmergencyFormScreen";
+import { EmergencyListScreen } from "../src/screens/EmergencyListScreen";
+import { HomeScreen } from "../src/screens/HomeScreen";
+import { LoginScreen } from "../src/screens/LoginScreen";
+
+type ScreenRoute = "login" | "home" | "form" | "list";
+
+// Flujo inicial simulado. Expo Router se mantiene como punto de entrada.
 export default function Index() {
+  const [screen, setScreen] = useState<ScreenRoute>("login");
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>VecinoSeguro</Text>
-      <Text style={styles.subtitle}>Aplicación comunitaria de emergencias locales</Text>
-    </View>
+    <SafeAreaProvider>
+      {screen === "login" ? <LoginScreen onLoginSuccess={() => setScreen("home")} /> : null}
+      {screen === "home" ? (
+        <HomeScreen
+          onLogout={() => setScreen("login")}
+          onRegisterEmergency={() => setScreen("form")}
+          onViewEmergencies={() => setScreen("list")}
+        />
+      ) : null}
+      {screen === "form" ? <EmergencyFormScreen onBack={() => setScreen("home")} /> : null}
+      {screen === "list" ? (
+        <EmergencyListScreen onBack={() => setScreen("home")} onRegisterEmergency={() => setScreen("form")} />
+      ) : null}
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
-  subtitle: {
-    fontSize: 16,
-    marginTop: 8,
-    textAlign: "center",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-  },
-});
-
