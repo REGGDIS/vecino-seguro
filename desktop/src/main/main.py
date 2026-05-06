@@ -4,10 +4,6 @@ Este módulo actúa como contenedor de dependencias del prototipo:
 construye una sola vez los repositorios y los inyecta en los controladores,
 los controladores se inyectan en las vistas. Esto refleja el Principio de
 Inversión de Dependencias (DIP) de SOLID.
-
-Si el equipo decide migrar la interfaz a Tkinter, este archivo cambiará
-para crear las vistas Tkinter, pero los controladores y repositorios se
-mantendrán intactos.
 """
 
 import sys

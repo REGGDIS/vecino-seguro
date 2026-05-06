@@ -88,9 +88,8 @@ class DashboardView(QWidget):
 
         self.recientes_box = QVBoxLayout()
         self.recientes_box.setSpacing(8)
-        # SOLUCIÓN 1: Alinear los reportes hacia arriba para que no se esparzan
-        # al agrandar la ventana (soluciona tu segunda imagen).
-        self.recientes_box.setAlignment(Qt.AlignTop) 
+        # Mantiene los reportes recientes agrupados al inicio del contenedor.
+        self.recientes_box.setAlignment(Qt.AlignTop)
 
         self.recientes_container = QFrame()
         self.recientes_container.setLayout(self.recientes_box)
@@ -156,10 +155,8 @@ class DashboardView(QWidget):
     def _mk_reciente_row(self, emergencia) -> QFrame:
         f = QFrame()
         f.setObjectName("recentRow")
-        
-        # SOLUCIÓN 2: Altura fija (ni mínima ni máxima). La tarjeta será
-        # exactamente de 72 píxeles de alto, pase lo que pase con la ventana.
-        # Esto evita que se aplasten y se dibujen encima de otras (soluciona la imagen 1).
+
+        # Altura estable para evitar solapamientos al redimensionar la ventana.
         f.setFixedHeight(72)
 
         l = QHBoxLayout(f)
@@ -187,7 +184,7 @@ class DashboardView(QWidget):
             "font-size: 13px; font-weight: 600; color: #102A43; "
             "background: transparent; border: none;"
         )
-        # OJO: Sin WordWrap para forzar que el texto no intente deformar la altura de la tarjeta.
+        # Sin WordWrap para conservar una altura uniforme en cada fila.
         text_box.addWidget(titulo)
         
         meta = QLabel(
@@ -197,7 +194,7 @@ class DashboardView(QWidget):
         meta.setStyleSheet(
             "font-size: 11px; color: #52616B; background: transparent; border: none;"
         )
-        # OJO: Sin WordWrap aquí también.
+        # Mantiene la fila compacta y consistente con el título.
         text_box.addWidget(meta)
         
         l.addLayout(text_box)

@@ -79,17 +79,25 @@ class EmergencyRepository:
             ))
             self._next_id += 1
 
+    def _normalizar_emergencia(self, emergencia: Emergencia) -> Emergencia:
+        """Asegura que los campos categóricos se mantengan como enums."""
+        emergencia.normalizar_campos()
+        return emergencia
+
     def list_all(self) -> list[Emergencia]:
+        for emergencia in self._emergencias:
+            self._normalizar_emergencia(emergencia)
         return sorted(self._emergencias,
                       key=lambda e: e.fecha_reporte, reverse=True)
 
     def find_by_id(self, emergencia_id: int) -> Optional[Emergencia]:
         for e in self._emergencias:
             if e.id == emergencia_id:
-                return e
+                return self._normalizar_emergencia(e)
         return None
 
     def save(self, emergencia: Emergencia) -> Emergencia:
+        emergencia = self._normalizar_emergencia(emergencia)
         if emergencia.id == 0:
             emergencia.id = self._next_id
             self._next_id += 1
@@ -107,5 +115,6 @@ class EmergencyRepository:
     def count_by_estado(self) -> dict[EstadoEmergencia, int]:
         contadores = {estado: 0 for estado in EstadoEmergencia}
         for e in self._emergencias:
+            self._normalizar_emergencia(e)
             contadores[e.estado] += 1
         return contadores
