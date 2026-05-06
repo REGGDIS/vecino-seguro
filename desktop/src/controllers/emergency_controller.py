@@ -18,6 +18,7 @@ from src.models.entities import (
     NivelUrgencia,
     TipoEmergencia,
     Usuario,
+    normalizar_enum,
 )
 from src.repositories.emergency_repository import EmergencyRepository
 from src.services.api_client import ApiClient
@@ -45,10 +46,12 @@ class EmergencyController:
         """Crea una emergencia a partir de un payload serializado."""
         nueva = Emergencia(
             id=0,
-            tipo=TipoEmergencia(payload["tipo"]),
+            tipo=normalizar_enum(payload["tipo"], TipoEmergencia, "tipo"),
             descripcion=payload["descripcion"],
             ubicacion=payload["ubicacion"],
-            nivel_urgencia=NivelUrgencia(payload["nivel_urgencia"]),
+            nivel_urgencia=normalizar_enum(
+                payload["nivel_urgencia"], NivelUrgencia, "nivel_urgencia"
+            ),
             estado=EstadoEmergencia.PENDIENTE,
             rut_reportante=payload["rut_reportante"],
             nombre_reportante=payload["nombre_reportante"],
@@ -77,10 +80,10 @@ class EmergencyController:
     def registrar(
         self,
         usuario: Usuario,
-        tipo: TipoEmergencia,
+        tipo: TipoEmergencia | str,
         descripcion: str,
         ubicacion: str,
-        nivel_urgencia: NivelUrgencia,
+        nivel_urgencia: NivelUrgencia | str,
     ) -> tuple[bool, str, Optional[Emergencia]]:
         """Valida los datos del reporte y lo persiste en estado Pendiente."""
         if not descripcion.strip():
@@ -90,12 +93,17 @@ class EmergencyController:
         if not ubicacion.strip():
             return False, "Debe indicar una ubicación.", None
 
+        tipo_normalizado = normalizar_enum(tipo, TipoEmergencia, "tipo")
+        urgencia_normalizada = normalizar_enum(
+            nivel_urgencia, NivelUrgencia, "nivel_urgencia"
+        )
+
         nueva = Emergencia(
             id=0,
-            tipo=tipo,
+            tipo=tipo_normalizado,
             descripcion=descripcion.strip(),
             ubicacion=ubicacion.strip(),
-            nivel_urgencia=nivel_urgencia,
+            nivel_urgencia=urgencia_normalizada,
             estado=EstadoEmergencia.PENDIENTE,
             rut_reportante=usuario.rut,
             nombre_reportante=usuario.nombre,
@@ -107,14 +115,17 @@ class EmergencyController:
     def cambiar_estado(
         self,
         emergencia_id: int,
-        nuevo_estado: EstadoEmergencia,
+        nuevo_estado: EstadoEmergencia | str,
         observaciones: str = "",
     ) -> tuple[bool, str]:
         emergencia = self._repo.find_by_id(emergencia_id)
         if not emergencia:
             return False, "Emergencia no encontrada."
-        emergencia.estado = nuevo_estado
+        estado_normalizado = normalizar_enum(
+            nuevo_estado, EstadoEmergencia, "estado"
+        )
+        emergencia.estado = estado_normalizado
         if observaciones:
             emergencia.observaciones = observaciones
         self._repo.save(emergencia)
-        return True, f"Estado actualizado a '{nuevo_estado.value}'."
+        return True, f"Estado actualizado a '{estado_normalizado.value}'."

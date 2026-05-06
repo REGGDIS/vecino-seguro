@@ -1,7 +1,7 @@
 """Controlador de autenticación.
 
 Coordina la vista de login con los servicios y repositorios sin acoplarse
-al toolkit visual (PySide6 / Tkinter). Mantiene la firma `login(rut, password)`
+al toolkit visual PySide6. Mantiene la firma `login(rut, password)`
 del controlador base y agrega lógica real de validación de RUT y verificación
 de contraseña hasheada.
 

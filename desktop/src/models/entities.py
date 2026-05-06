@@ -10,6 +10,22 @@ y fáciles de mapear a/desde JSON cuando el backend FastAPI esté disponible.
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import TypeVar
+
+
+EnumT = TypeVar("EnumT", bound=Enum)
+
+
+def normalizar_enum(valor: EnumT | str, enum_cls: type[EnumT], campo: str) -> EnumT:
+    """Convierte strings válidos al enum esperado y rechaza valores inválidos."""
+    if isinstance(valor, enum_cls):
+        return valor
+    if isinstance(valor, str):
+        texto = valor.strip()
+        for miembro in enum_cls:
+            if texto in (miembro.value, miembro.name):
+                return miembro
+    raise ValueError(f"{campo} inválido: {valor!r}")
 
 
 class Rol(str, Enum):
@@ -50,7 +66,15 @@ class Usuario:
     password_hash: str
     direccion: str = ""
 
+    def __post_init__(self) -> None:
+        self.normalizar_campos()
+
+    def normalizar_campos(self) -> None:
+        """Asegura que el rol se mantenga como enum."""
+        self.rol = normalizar_enum(self.rol, Rol, "rol")
+
     def to_dict(self) -> dict:
+        self.normalizar_campos()
         d = asdict(self)
         d["rol"] = self.rol.value
         return d
@@ -69,7 +93,19 @@ class Emergencia:
     fecha_reporte: datetime = field(default_factory=datetime.now)
     observaciones: str = ""
 
+    def __post_init__(self) -> None:
+        self.normalizar_campos()
+
+    def normalizar_campos(self) -> None:
+        """Asegura que los campos categóricos se mantengan como enums."""
+        self.tipo = normalizar_enum(self.tipo, TipoEmergencia, "tipo")
+        self.nivel_urgencia = normalizar_enum(
+            self.nivel_urgencia, NivelUrgencia, "nivel_urgencia"
+        )
+        self.estado = normalizar_enum(self.estado, EstadoEmergencia, "estado")
+
     def to_dict(self) -> dict:
+        self.normalizar_campos()
         return {
             "id": self.id,
             "tipo": self.tipo.value,

@@ -2,8 +2,7 @@
 
 Usa PySide6 como base recomendada por la guía del proyecto. Toda la lógica
 de validación se delega al `AuthController`, lo que mantiene la vista
-desacoplada del modelo de datos y permite migrar a Tkinter sin reescribir
-la lógica de negocio.
+desacoplada del modelo de datos y del resto de la lógica de negocio.
 """
 
 from pathlib import Path
