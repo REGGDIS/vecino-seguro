@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -34,7 +35,21 @@ class DashboardView(QWidget):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        layout = QVBoxLayout(self)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.NoFrame)
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+        root.addWidget(scroll)
+
+        container = QWidget()
+        container.setStyleSheet("background: transparent;")
+        scroll.setWidget(container)
+
+        layout = QVBoxLayout(container)
         layout.setContentsMargins(40, 32, 40, 32)
         layout.setSpacing(24)
 
@@ -87,7 +102,7 @@ class DashboardView(QWidget):
         layout.addWidget(recientes_titulo)
 
         self.recientes_box = QVBoxLayout()
-        self.recientes_box.setSpacing(8)
+        self.recientes_box.setSpacing(10)
         # Mantiene los reportes recientes agrupados al inicio del contenedor.
         self.recientes_box.setAlignment(Qt.AlignTop)
 
@@ -101,7 +116,7 @@ class DashboardView(QWidget):
     def _mk_kpi(self, numero: str, etiqueta: str, color: str) -> tuple[QFrame, QLabel]:
         card = QFrame()
         card.setObjectName("kpiCard")
-        card.setMinimumHeight(110)
+        card.setMinimumHeight(0)  # deja que el contenido dicte la altura
         lay = QVBoxLayout(card)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(4)
@@ -156,52 +171,81 @@ class DashboardView(QWidget):
         f = QFrame()
         f.setObjectName("recentRow")
 
-        # Altura estable para evitar solapamientos al redimensionar la ventana.
-        f.setFixedHeight(72)
-
-        l = QHBoxLayout(f)
-        l.setContentsMargins(16, 12, 16, 12)
-        l.setSpacing(12)
+        outer = QHBoxLayout(f)
+        outer.setContentsMargins(16, 12, 16, 12)
+        outer.setSpacing(12)
 
         color_urg = {
-            "Crítica": "#D92D20", "Alta": "#F2A900",
-            "Media": "#D69E2E",   "Baja": "#22A63A",
+            "Crítica": "#D92D20",
+            "Alta":    "#F2A900",
+            "Media":   "#D69E2E",
+            "Baja":    "#22A63A",
         }.get(emergencia.nivel_urgencia.value, "#52616B")
-        
-        dot = QLabel()
-        dot.setStyleSheet(
-            f"background-color: {color_urg}; border-radius: 5px; "
-            f"min-width: 10px; max-width: 10px; min-height: 10px; max-height: 10px; "
-            f"border: none;"
-        )
-        l.addWidget(dot)
 
-        text_box = QVBoxLayout()
-        text_box.setSpacing(2)
-        
-        titulo = QLabel(f"{emergencia.tipo.value} · {emergencia.ubicacion}")
-        titulo.setStyleSheet(
-            "font-size: 13px; font-weight: 600; color: #102A43; "
-            "background: transparent; border: none;"
+        # Punto de color
+        dot = QLabel()
+        dot.setFixedSize(10, 10)
+        dot.setStyleSheet(
+            f"background-color: {color_urg}; border-radius: 5px; border: none;"
         )
-        # Sin WordWrap para conservar una altura uniforme en cada fila.
-        text_box.addWidget(titulo)
-        
-        meta = QLabel(
+        outer.addWidget(dot, 0, Qt.AlignTop)
+
+        # Columna izquierda: texto
+        left = QWidget()
+        left.setStyleSheet("background: transparent;")
+        left_layout = QVBoxLayout(left)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(2)
+
+        lbl_tipo = QLabel(emergencia.tipo.value)
+        lbl_tipo.setStyleSheet(
+            "font-size: 13px; font-weight: 700; color: #102A43;"
+        )
+        lbl_tipo.setWordWrap(True)
+
+        lbl_ubicacion = QLabel(emergencia.ubicacion)
+        lbl_ubicacion.setStyleSheet(
+            "font-size: 12px; color: #52616B;"
+        )
+        lbl_ubicacion.setWordWrap(True)
+
+        lbl_meta = QLabel(
             f"#{emergencia.id} · {emergencia.nombre_reportante} · "
             f"{emergencia.fecha_reporte.strftime('%d-%m-%Y %H:%M')}"
         )
-        meta.setStyleSheet(
-            "font-size: 11px; color: #52616B; background: transparent; border: none;"
-        )
-        # Mantiene la fila compacta y consistente con el título.
-        text_box.addWidget(meta)
-        
-        l.addLayout(text_box)
-        l.addStretch()
+        lbl_meta.setStyleSheet("font-size: 11px; color: #9CA3AF;")
 
-        badge = crear_badge_estado(emergencia.estado.value)
-        l.addWidget(badge)
+        left_layout.addWidget(lbl_tipo)
+        left_layout.addWidget(lbl_ubicacion)
+        left_layout.addWidget(lbl_meta)
+
+        outer.addWidget(left, stretch=1)
+
+        # Columna derecha: badges
+        right = QWidget()
+        right.setStyleSheet("background: transparent;")
+        right_layout = QVBoxLayout(right)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(4)
+        right_layout.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
+        badge_estado = crear_badge_estado(emergencia.estado.value)
+        badge_estado.setFixedWidth(90)
+
+        lbl_urg = QLabel(f"● {emergencia.nivel_urgencia.value}")
+        lbl_urg.setFixedWidth(90)
+        lbl_urg.setAlignment(Qt.AlignCenter)
+        lbl_urg.setStyleSheet(
+            f"color: {color_urg}; border: 1px solid #D9E2EC; "
+            "border-radius: 10px; padding: 3px 8px; "
+            "font-size: 11px; font-weight: 700;"
+        )
+
+        right_layout.addWidget(badge_estado)
+        right_layout.addWidget(lbl_urg)
+
+        outer.addWidget(right, stretch=0)
+
         return f
 
     # ---- API pública ----

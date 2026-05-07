@@ -136,11 +136,12 @@ QFrame#actionCard:hover {
 QFrame#recentRow {
     background-color: #FFFFFF;
     border: 1px solid #D9E2EC;
-    border-radius: 8px;
+    border-radius: 10px;
 }
-QFrame#recentRow QLabel {
-    background-color: transparent;
-    border: none;
+
+QFrame#recentRow:hover {
+    border: 1.5px solid #005A9C;
+    background-color: #FBFDFF;
 }
 
 /* === Tarjeta de usuario en sidebar === */
@@ -213,6 +214,26 @@ QLabel#errorMsg {
     font-weight: 500;
 }
 
+/* === Tooltips del sistema === */
+QToolTip {
+    background-color: #102A43;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+/* === Combo box popup === */
+QComboBox QAbstractItemView {
+    background-color: #FFFFFF;
+    border: 1px solid #D9E2EC;
+    selection-background-color: #005A9C;
+    selection-color: #FFFFFF;
+    padding: 4px;
+    outline: none;
+}
+
 /* === ScrollArea / ScrollBar === */
 QScrollArea {
     background-color: transparent;
@@ -223,6 +244,7 @@ QScrollBar:vertical {
     background: #F4F8FB;
     width: 10px;
     border-radius: 5px;
+    margin: 0;
 }
 QScrollBar::handle:vertical {
     background: #C8D4E5;
@@ -230,4 +252,16 @@ QScrollBar::handle:vertical {
     min-height: 30px;
 }
 QScrollBar::handle:vertical:hover { background: #6B85A8; }
-QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical { height: 0; border: none; }
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical { background: none; }
+
+/* === Splitter handle === */
+QSplitter::handle {
+    background-color: #D9E2EC;
+    width: 1px;
+}
+QSplitter::handle:hover {
+    background-color: #005A9C;
+}
