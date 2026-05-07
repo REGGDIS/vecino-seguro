@@ -24,6 +24,28 @@ GET /health
 
 Este endpoint permite verificar que la API está levantada correctamente.
 
+## Endpoint de información del sistema
+
+```text
+GET /api/v1/system/info
+```
+
+Entrega información general del backend, incluyendo nombre de la aplicación, versión, ambiente, estado y mensaje operativo.
+
+Ejemplo de respuesta:
+
+```json
+{
+  "app_name": "VecinoSeguro",
+  "version": "0.1.0",
+  "environment": "development",
+  "status": "running",
+  "message": "Backend VecinoSeguro operativo"
+}
+```
+
+Este endpoint permite verificar que la API está levantada correctamente.
+
 ## Módulos preparados
 
 - `auth`: autenticación con RUT y contraseña.

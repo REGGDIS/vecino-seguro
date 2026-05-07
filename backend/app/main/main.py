@@ -12,6 +12,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.emergencies.router import router as emergencies_router
 from app.modules.reports.router import router as reports_router
 from app.modules.users.router import router as users_router
+from app.modules.system.router import router as system_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -23,6 +24,7 @@ app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(users_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(emergencies_router, prefix="/api/v1/emergencies", tags=["emergencies"])
 app.include_router(reports_router, prefix="/api/v1/reports", tags=["reports"])
+app.include_router(system_router, prefix="/api/v1/system", tags=["system"])
 
 
 @app.get("/health")
