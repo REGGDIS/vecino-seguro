@@ -1,10 +1,12 @@
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppLayout } from "../components/AppLayout";
 import { EmergencyCard } from "../components/EmergencyCard";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { mockEmergencies } from "../data/mockEmergencies";
+import { getEmergencies } from "../services/emergencyService";
 import { colors, spacing } from "../styles/theme";
+import type { Emergency } from "../types/emergency";
 
 interface EmergencyListScreenProps {
   onBack: () => void;
@@ -12,6 +14,22 @@ interface EmergencyListScreenProps {
 }
 
 export function EmergencyListScreen({ onBack, onRegisterEmergency }: EmergencyListScreenProps) {
+  const [emergencies, setEmergencies] = useState<Emergency[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getEmergencies().then((items) => {
+      if (isMounted) {
+        setEmergencies(items);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <AppLayout
       subtitle="Listado inicial con datos simulados para presentar estados, urgencias y ubicaciones."
@@ -24,11 +42,11 @@ export function EmergencyListScreen({ onBack, onRegisterEmergency }: EmergencyLi
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Reportes comunitarios</Text>
-        <Text style={styles.sectionSubtitle}>{mockEmergencies.length} reportes simulados disponibles.</Text>
+        <Text style={styles.sectionSubtitle}>{emergencies.length} reportes simulados disponibles.</Text>
       </View>
 
       <View style={styles.list}>
-        {mockEmergencies.map((emergency) => (
+        {emergencies.map((emergency) => (
           <EmergencyCard emergency={emergency} key={emergency.id} />
         ))}
       </View>
