@@ -136,7 +136,11 @@ QFrame#actionCard:hover {
 QFrame#recentRow {
     background-color: #FFFFFF;
     border: 1px solid #D9E2EC;
-    border-radius: 8px;
+    border-radius: 10px;
+}
+QFrame#recentRow:hover {
+    border: 1.5px solid #005A9C;
+    background-color: #FBFDFF;
 }
 QFrame#recentRow QLabel {
     background-color: transparent;

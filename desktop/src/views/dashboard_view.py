@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -34,7 +35,21 @@ class DashboardView(QWidget):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        layout = QVBoxLayout(self)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.NoFrame)
+        scroll.setStyleSheet("background: transparent;")
+        root.addWidget(scroll)
+
+        container = QWidget()
+        container.setStyleSheet("background: transparent;")
+        scroll.setWidget(container)
+
+        layout = QVBoxLayout(container)
         layout.setContentsMargins(40, 32, 40, 32)
         layout.setSpacing(24)
 
@@ -87,7 +102,7 @@ class DashboardView(QWidget):
         layout.addWidget(recientes_titulo)
 
         self.recientes_box = QVBoxLayout()
-        self.recientes_box.setSpacing(8)
+        self.recientes_box.setSpacing(10)
         # Mantiene los reportes recientes agrupados al inicio del contenedor.
         self.recientes_box.setAlignment(Qt.AlignTop)
 
@@ -155,9 +170,7 @@ class DashboardView(QWidget):
     def _mk_reciente_row(self, emergencia) -> QFrame:
         f = QFrame()
         f.setObjectName("recentRow")
-
-        # Altura estable para evitar solapamientos al redimensionar la ventana.
-        f.setFixedHeight(72)
+        f.setMinimumHeight(94)
 
         l = QHBoxLayout(f)
         l.setContentsMargins(16, 12, 16, 12)
@@ -174,18 +187,27 @@ class DashboardView(QWidget):
             f"min-width: 10px; max-width: 10px; min-height: 10px; max-height: 10px; "
             f"border: none;"
         )
-        l.addWidget(dot)
+        l.addWidget(dot, 0, Qt.AlignTop)
 
         text_box = QVBoxLayout()
-        text_box.setSpacing(2)
+        text_box.setContentsMargins(0, 0, 0, 0)
+        text_box.setSpacing(4)
         
-        titulo = QLabel(f"{emergencia.tipo.value} · {emergencia.ubicacion}")
+        titulo = QLabel(emergencia.tipo.value)
         titulo.setStyleSheet(
-            "font-size: 13px; font-weight: 600; color: #102A43; "
+            "font-size: 14px; font-weight: 700; color: #102A43; "
             "background: transparent; border: none;"
         )
-        # Sin WordWrap para conservar una altura uniforme en cada fila.
+        titulo.setWordWrap(True)
         text_box.addWidget(titulo)
+
+        ubicacion = QLabel(emergencia.ubicacion)
+        ubicacion.setStyleSheet(
+            "font-size: 12px; color: #102A43; "
+            "background: transparent; border: none;"
+        )
+        ubicacion.setWordWrap(True)
+        text_box.addWidget(ubicacion)
         
         meta = QLabel(
             f"#{emergencia.id} · {emergencia.nombre_reportante} · "
@@ -194,14 +216,28 @@ class DashboardView(QWidget):
         meta.setStyleSheet(
             "font-size: 11px; color: #52616B; background: transparent; border: none;"
         )
-        # Mantiene la fila compacta y consistente con el título.
+        meta.setWordWrap(True)
         text_box.addWidget(meta)
         
-        l.addLayout(text_box)
-        l.addStretch()
+        l.addLayout(text_box, 1)
 
         badge = crear_badge_estado(emergencia.estado.value)
-        l.addWidget(badge)
+
+        urgencia = QLabel(emergencia.nivel_urgencia.value)
+        urgencia.setAlignment(Qt.AlignCenter)
+        urgencia.setStyleSheet(
+            f"color: {color_urg}; border: 1px solid {color_urg}; "
+            "background: transparent; border-radius: 9px; padding: 3px 8px; "
+            "font-size: 11px; font-weight: 700;"
+        )
+
+        badge_box = QVBoxLayout()
+        badge_box.setContentsMargins(0, 0, 0, 0)
+        badge_box.setSpacing(6)
+        badge_box.addWidget(badge, 0, Qt.AlignRight)
+        badge_box.addWidget(urgencia, 0, Qt.AlignRight)
+        badge_box.addStretch()
+        l.addLayout(badge_box)
         return f
 
     # ---- API pública ----
