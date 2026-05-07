@@ -12,3 +12,10 @@ export interface Emergency {
   urgencyLevel: UrgencyLevel;
   createdAt: string;
 }
+
+export interface CreateEmergencyInput {
+  type: string;
+  description: string;
+  location: string;
+  urgencyLevel: UrgencyLevel;
+}

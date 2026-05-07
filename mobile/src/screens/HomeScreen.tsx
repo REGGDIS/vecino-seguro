@@ -1,11 +1,12 @@
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppLayout } from "../components/AppLayout";
 import { EmergencyCard } from "../components/EmergencyCard";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { mockEmergencies } from "../data/mockEmergencies";
+import { getEmergencies } from "../services/emergencyService";
 import { colors, radii, shadows, spacing } from "../styles/theme";
-import type { EmergencyStatus } from "../types/emergency";
+import type { Emergency, EmergencyStatus } from "../types/emergency";
 
 interface HomeScreenProps {
   onLogout: () => void;
@@ -21,7 +22,22 @@ const summaryConfig: Array<{ label: string; status: EmergencyStatus; color: stri
 ];
 
 export function HomeScreen({ onLogout, onRegisterEmergency, onViewEmergencies }: HomeScreenProps) {
-  const latestEmergencies = mockEmergencies.slice(0, 3);
+  const [emergencies, setEmergencies] = useState<Emergency[]>([]);
+  const latestEmergencies = emergencies.slice(0, 3);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getEmergencies().then((items) => {
+      if (isMounted) {
+        setEmergencies(items);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <AppLayout
@@ -35,7 +51,7 @@ export function HomeScreen({ onLogout, onRegisterEmergency, onViewEmergencies }:
 
       <View style={styles.summaryGrid}>
         {summaryConfig.map((item) => {
-          const count = mockEmergencies.filter((emergency) => emergency.status === item.status).length;
+          const count = emergencies.filter((emergency) => emergency.status === item.status).length;
 
           return (
             <View key={item.status} style={styles.summaryCard}>

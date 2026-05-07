@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppLayout } from "../components/AppLayout";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { createEmergency } from "../services/emergencyService";
 import { colors, radii, shadows, spacing } from "../styles/theme";
 import type { UrgencyLevel } from "../types/emergency";
 
@@ -25,20 +26,36 @@ export function EmergencyFormScreen({ onBack }: EmergencyFormScreenProps) {
   const [urgencyLevel, setUrgencyLevel] = useState<UrgencyLevel>("medium");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!type.trim() || !description.trim() || !location.trim()) {
       setMessage("");
       setError("Completa tipo, descripción y ubicación para registrar el reporte.");
       return;
     }
 
-    setError("");
-    setMessage("Emergencia registrada de forma simulada. La conexión real quedará para una futura iteración.");
-    setType("");
-    setDescription("");
-    setLocation("");
-    setUrgencyLevel("medium");
+    try {
+      setIsSubmitting(true);
+      await createEmergency({
+        type,
+        description,
+        location,
+        urgencyLevel,
+      });
+
+      setError("");
+      setMessage("Emergencia registrada de forma simulada. La conexión real quedará para una futura iteración.");
+      setType("");
+      setDescription("");
+      setLocation("");
+      setUrgencyLevel("medium");
+    } catch {
+      setMessage("");
+      setError("No fue posible registrar la emergencia simulada.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -104,7 +121,7 @@ export function EmergencyFormScreen({ onBack }: EmergencyFormScreenProps) {
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {message ? <Text style={styles.success}>{message}</Text> : null}
 
-        <PrimaryButton label="Registrar emergencia" onPress={handleSubmit} />
+        <PrimaryButton disabled={isSubmitting} label="Registrar emergencia" onPress={handleSubmit} />
         <PrimaryButton label="Volver al inicio" onPress={onBack} variant="outline" />
       </View>
     </AppLayout>
