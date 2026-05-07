@@ -103,7 +103,7 @@ class EmergencyListView(QWidget):
         h_header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         h_header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
         h_header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
-        self.tabla.setMinimumWidth(560)
+        self.tabla.setMinimumWidth(680)
         splitter.addWidget(self.tabla)
 
         # === Detalle ===
@@ -139,8 +139,8 @@ class EmergencyListView(QWidget):
         self.detalle_stack.setMinimumWidth(360)
 
         splitter.addWidget(self.detalle_stack)
-        splitter.setStretchFactor(0, 3)
-        splitter.setStretchFactor(1, 2)
+        splitter.setStretchFactor(0, 4)
+        splitter.setStretchFactor(1, 3)
         outer.addWidget(splitter, 1)
 
     def _build_detalle_panel(self) -> QFrame:
@@ -298,8 +298,8 @@ class EmergencyListView(QWidget):
         for row, em in enumerate(emergencias):
             self._set_cell(row, 0, f"#{em.id}", align=Qt.AlignCenter,
                            color="#52616B", weight=600, data=em.id)
-            self._set_cell(row, 1, em.tipo.value)
-            self._set_cell(row, 2, em.ubicacion)
+            self._set_cell(row, 1, em.tipo.value, tooltip=em.tipo.value)
+            self._set_cell(row, 2, em.ubicacion, tooltip=em.ubicacion)
             self._set_cell(row, 3, em.nivel_urgencia.value, align=Qt.AlignCenter,
                            color=self._color_urg(em.nivel_urgencia.value), weight=700)
             self._set_cell(row, 4, em.estado.value, align=Qt.AlignCenter,
@@ -321,7 +321,8 @@ class EmergencyListView(QWidget):
         self.detalle_stack.setCurrentIndex(0)
 
     def _set_cell(self, row, col, texto, align=Qt.AlignLeft | Qt.AlignVCenter,
-                  color: str | None = None, weight: int = 400, data=None) -> None:
+                  color: str | None = None, weight: int = 400, data=None,
+                  tooltip: str | None = None) -> None:
         item = QTableWidgetItem(texto)
         item.setTextAlignment(align)
         if color:
@@ -336,6 +337,8 @@ class EmergencyListView(QWidget):
         item.setFont(f)
         if data is not None:
             item.setData(Qt.UserRole, data)
+        if tooltip:
+            item.setToolTip(tooltip)
         self.tabla.setItem(row, col, item)
 
     def _color_urg(self, v: str) -> str:

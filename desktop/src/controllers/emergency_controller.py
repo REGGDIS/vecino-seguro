@@ -12,6 +12,8 @@ estado de los reportes.
 from datetime import datetime
 from typing import Optional
 
+from src.config.settings import settings
+from src.core.rut_validator import RutValidator
 from src.models.entities import (
     Emergencia,
     EstadoEmergencia,
@@ -35,15 +37,56 @@ class EmergencyController:
         self._repo = repository or EmergencyRepository()
         self._api = api_client
 
+    def _parse_backend_emergencia(self, data: dict) -> Optional[Emergencia]:
+        try:
+            fecha = data.get("fecha_reporte")
+            if isinstance(fecha, str) and fecha.endswith("Z"):
+                fecha = fecha.replace("Z", "+00:00")
+
+            return Emergencia(
+                id=int(data["id"]),
+                tipo=TipoEmergencia(data["tipo"]),
+                descripcion=data["descripcion"],
+                ubicacion=data["ubicacion"],
+                nivel_urgencia=NivelUrgencia(data["nivel_urgencia"]),
+                estado=EstadoEmergencia(data["estado"]),
+                rut_reportante=RutValidator.formatear(data["rut_reportante"]),
+                nombre_reportante=data["nombre_reportante"],
+                fecha_reporte=datetime.fromisoformat(fecha),
+                observaciones=data.get("observaciones", ""),
+            )
+        except (KeyError, ValueError, TypeError):
+            return None
+
     # ------------------------------------------------------------------
     # API base del stub original (firma compatible)
     # ------------------------------------------------------------------
     def list_emergencies(self) -> list[dict]:
         """Devuelve todas las emergencias serializadas a diccionario."""
+        if settings.use_backend and self._api:
+            backend_items = self._api.listar_emergencias()
+            if self._api.last_error is None:
+                emergencias = [
+                    e.to_dict()
+                    for e in (
+                        self._parse_backend_emergencia(item)
+                        for item in backend_items
+                    )
+                    if e is not None
+                ]
+                return emergencias
+
         return [e.to_dict() for e in self._repo.list_all()]
 
     def create_emergency(self, payload: dict) -> dict:
         """Crea una emergencia a partir de un payload serializado."""
+        if settings.use_backend and self._api:
+            response = self._api.crear_emergencia(payload)
+            if response is not None and self._api.last_error is None:
+                backend_emergencia = self._parse_backend_emergencia(response)
+                if backend_emergencia:
+                    return backend_emergencia.to_dict()
+
         nueva = Emergencia(
             id=0,
             tipo=normalizar_enum(payload["tipo"], TipoEmergencia, "tipo"),
@@ -63,19 +106,46 @@ class EmergencyController:
     # API extendida para uso desde las vistas
     # ------------------------------------------------------------------
     def listar(self) -> list[Emergencia]:
+        if settings.use_backend and self._api:
+            backend_items = self._api.listar_emergencias()
+            if self._api.last_error is None:
+                emergencias = [
+                    e
+                    for e in (
+                        self._parse_backend_emergencia(item)
+                        for item in backend_items
+                    )
+                    if e is not None
+                ]
+                return emergencias
+
         return self._repo.list_all()
 
     def listar_por_estado(self, estado: EstadoEmergencia) -> list[Emergencia]:
+        if settings.use_backend and self._api:
+            items = self.listar()
+            return [e for e in items if e.estado == estado]
         return self._repo.filter_by_estado(estado)
 
     def listar_de_usuario(self, rut: str) -> list[Emergencia]:
-        return [e for e in self._repo.list_all() if e.rut_reportante == rut]
+        return [e for e in self.listar() if e.rut_reportante == rut]
 
     def obtener(self, emergencia_id: int) -> Optional[Emergencia]:
+        if settings.use_backend and self._api:
+            resultado = self._api.obtener_emergencia(emergencia_id)
+            if resultado is not None and self._api.last_error is None:
+                emergencia = self._parse_backend_emergencia(resultado)
+                if emergencia:
+                    return emergencia
+
         return self._repo.find_by_id(emergencia_id)
 
     def estadisticas(self) -> dict[EstadoEmergencia, int]:
-        return self._repo.count_by_estado()
+        lista = self.listar()
+        contadores = {estado: 0 for estado in EstadoEmergencia}
+        for emergencia in lista:
+            contadores[emergencia.estado] += 1
+        return contadores
 
     def registrar(
         self,
@@ -109,6 +179,15 @@ class EmergencyController:
             nombre_reportante=usuario.nombre,
             fecha_reporte=datetime.now(),
         )
+
+        if settings.use_backend and self._api:
+            payload = nueva.to_dict()
+            response = self._api.crear_emergencia(payload)
+            if response is not None and self._api.last_error is None:
+                backend_emergencia = self._parse_backend_emergencia(response)
+                if backend_emergencia:
+                    return True, f"Emergencia #{backend_emergencia.id} registrada.", backend_emergencia
+
         guardada = self._repo.save(nueva)
         return True, f"Emergencia #{guardada.id} registrada.", guardada
 
@@ -118,6 +197,13 @@ class EmergencyController:
         nuevo_estado: EstadoEmergencia | str,
         observaciones: str = "",
     ) -> tuple[bool, str]:
+        if settings.use_backend and self._api:
+            response = self._api.cambiar_estado(
+                emergencia_id, nuevo_estado.value, observaciones
+            )
+            if response is not None and self._api.last_error is None:
+                return True, f"Estado actualizado a '{nuevo_estado.value}'."
+
         emergencia = self._repo.find_by_id(emergencia_id)
         if not emergencia:
             return False, "Emergencia no encontrada."

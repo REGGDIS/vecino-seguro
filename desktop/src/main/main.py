@@ -19,6 +19,7 @@ from src.controllers.auth_controller import AuthController
 from src.controllers.emergency_controller import EmergencyController
 from src.repositories.emergency_repository import EmergencyRepository
 from src.repositories.user_repository import UserRepository
+from src.services.api_client import ApiClient
 from src.views.login_view import LoginView
 from src.views.main_window import MainWindow
 
@@ -43,8 +44,15 @@ def main() -> int:
     # ---- Contenedor de dependencias ----
     user_repo = UserRepository()
     emergency_repo = EmergencyRepository()
-    auth_controller = AuthController(user_repository=user_repo)
-    emergency_controller = EmergencyController(repository=emergency_repo)
+    api_client = ApiClient()
+    auth_controller = AuthController(
+        user_repository=user_repo,
+        api_client=api_client,
+    )
+    emergency_controller = EmergencyController(
+        repository=emergency_repo,
+        api_client=api_client,
+    )
 
     # ---- Orquestación de ventanas ----
     state: dict = {"main": None, "login": None}

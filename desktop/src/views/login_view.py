@@ -56,12 +56,21 @@ class LoginView(QWidget):
         logo.setStyleSheet("background: transparent;")
         izq_layout.addWidget(logo, alignment=Qt.AlignCenter)
 
-        marca = QLabel("VecinoSeguro")
-        marca.setStyleSheet(
+        marca_container = QWidget()
+        marca_layout = QHBoxLayout(marca_container)
+        marca_layout.setContentsMargins(0, 0, 0, 0)
+        marca_layout.setSpacing(0)
+        lbl_vecino = QLabel("Vecino")
+        lbl_vecino.setStyleSheet(
             "color: #FFFFFF; font-size: 36px; font-weight: 800; letter-spacing: 0.5px;"
         )
-        marca.setAlignment(Qt.AlignCenter)
-        izq_layout.addWidget(marca)
+        lbl_seguro = QLabel("Seguro")
+        lbl_seguro.setStyleSheet(
+            "color: #22A63A; font-size: 36px; font-weight: 800; letter-spacing: 0.5px;"
+        )
+        marca_layout.addWidget(lbl_vecino)
+        marca_layout.addWidget(lbl_seguro)
+        izq_layout.addWidget(marca_container, alignment=Qt.AlignCenter)
 
         eslogan = QLabel("Comunidad conectada,\nrespuesta inmediata.")
         eslogan.setStyleSheet("color: #C8D4E5; font-size: 16px;")

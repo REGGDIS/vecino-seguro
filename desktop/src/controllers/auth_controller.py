@@ -11,9 +11,10 @@ autenticación a `ApiClient.login()` sin cambiar su API pública.
 
 from typing import Optional
 
+from src.config.settings import settings
 from src.core.password_service import PasswordService
 from src.core.rut_validator import RutValidator
-from src.models.entities import Usuario
+from src.models.entities import Rol, Usuario
 from src.repositories.user_repository import UserRepository
 from src.services.api_client import ApiClient
 
@@ -48,6 +49,30 @@ class AuthController:
         """
         return self.login_detallado(rut, password).exito
 
+    def _usuario_from_backend(self, payload: dict) -> Optional[Usuario]:
+        user_data = payload.get("user") or payload
+        try:
+            return Usuario(
+                rut=RutValidator.formatear(user_data["rut"]),
+                nombre=user_data["nombre"],
+                rol=Rol(user_data["rol"]),
+                password_hash=user_data.get("password_hash", ""),
+                direccion=user_data.get("direccion", ""),
+            )
+        except (KeyError, ValueError):
+            return None
+
+    def _fallback_login(self, rut_formateado: str, password: str) -> AuthResult:
+        usuario = self._repo.find_by_rut(rut_formateado)
+        if not usuario:
+            return AuthResult(False, mensaje="Usuario no encontrado.")
+
+        if not PasswordService.verificar(password, usuario.password_hash):
+            return AuthResult(False, mensaje="Contraseña incorrecta.")
+
+        self._sesion_actual = usuario
+        return AuthResult(True, usuario=usuario, mensaje="Bienvenido")
+
     def login_detallado(self, rut: str, password: str) -> AuthResult:
         if not rut.strip() or not password.strip():
             return AuthResult(False, mensaje="Complete todos los campos.")
@@ -58,15 +83,26 @@ class AuthController:
             )
 
         rut_formateado = RutValidator.formatear(rut)
-        usuario = self._repo.find_by_rut(rut_formateado)
-        if not usuario:
-            return AuthResult(False, mensaje="Usuario no encontrado.")
 
-        if not PasswordService.verificar(password, usuario.password_hash):
-            return AuthResult(False, mensaje="Contraseña incorrecta.")
+        if settings.use_backend:
+            backend_response = self.api_client.login(rut_formateado, password)
+            if backend_response is None:
+                return self._fallback_login(rut_formateado, password)
 
-        self._sesion_actual = usuario
-        return AuthResult(True, usuario=usuario, mensaje="Bienvenido")
+            usuario = self._usuario_from_backend(backend_response)
+            if usuario:
+                self._sesion_actual = usuario
+                mensaje = backend_response.get("message", "Bienvenido")
+                return AuthResult(True, usuario=usuario, mensaje=mensaje)
+
+            return AuthResult(
+                False,
+                mensaje=backend_response.get(
+                    "detail", "No se pudo autenticar contra el backend."
+                ),
+            )
+
+        return self._fallback_login(rut_formateado, password)
 
     def logout(self) -> None:
         self._sesion_actual = None
