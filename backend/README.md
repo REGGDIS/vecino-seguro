@@ -46,6 +46,41 @@ Ejemplo de respuesta:
 
 Este endpoint permite verificar que la API está levantada correctamente.
 
+## Endpoint de emergencias
+
+```text
+GET /api/v1/emergencies
+```
+
+Devuelve el listado de emergencias almacenadas en MySQL, ordenadas por fecha de creación descendente.
+
+Ejemplo de respuesta:
+
+```json
+[
+  {
+    "id": 1,
+    "user_id": 2,
+    "type": "Incendio",
+    "description": "Humo visible cerca de una vivienda.",
+    "location": "Pasaje Los Alerces 123",
+    "urgency_level": "alta",
+    "status": "pendiente",
+    "created_at": "2026-05-04T00:00:00",
+    "updated_at": "2026-05-04T00:00:00"
+  }
+]
+```
+
+Antes de probar este endpoint, se debe:
+
+1. Crear la base con `database/schema.sql`.
+2. Cargar datos de prueba con `database/seed.sql`.
+3. Configurar `backend/.env` usando `backend/.env.example` como referencia.
+4. Ejecutar el backend con `uvicorn app.main.main:app --reload`.
+
+Si la base de datos no responde o la consulta falla, el endpoint retorna `500` con un mensaje genérico.
+
 ## Módulos preparados
 
 - `auth`: autenticación con RUT y contraseña.
