@@ -23,7 +23,13 @@ def normalizar_enum(valor: EnumT | str, enum_cls: type[EnumT], campo: str) -> En
     if isinstance(valor, str):
         texto = valor.strip()
         for miembro in enum_cls:
-            if texto in (miembro.value, miembro.name):
+            if (
+                texto == miembro.value
+                or texto == miembro.name
+                or texto.lower() == miembro.value.lower()
+                or texto.lower() == miembro.name.lower()
+                or texto.replace("_", " ").lower() == miembro.value.lower()
+            ):
                 return miembro
     raise ValueError(f"{campo} inválido: {valor!r}")
 
