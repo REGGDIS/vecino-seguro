@@ -34,6 +34,7 @@ class EmergencyController:
     ) -> None:
         self._repo = repository or EmergencyRepository()
         self._api = api_client
+        self.backend_error: str | None = None
 
     # ------------------------------------------------------------------
     # API base del stub original (firma compatible)
@@ -63,10 +64,25 @@ class EmergencyController:
     # API extendida para uso desde las vistas
     # ------------------------------------------------------------------
     def listar(self) -> list[Emergencia]:
+        self.backend_error = None
+
         if self._api is not None:
             datos = self._api.get_emergencies()
             if datos is not None:
-                return self._parsear_emergencias(datos)
+                emergencias = self._parsear_emergencias(datos)
+                if emergencias or datos == []:
+                    return emergencias
+
+                self.backend_error = (
+                    "El backend respondió, pero no se pudieron interpretar "
+                    "las emergencias recibidas."
+                )
+            else:
+                self.backend_error = (
+                    "No se pudo conectar con el backend. "
+                    "Verifica que el servidor esté encendido."
+                )
+
         return self._repo.list_all()
 
     def _parsear_emergencias(self, datos: list[dict]) -> list[Emergencia]:
@@ -87,14 +103,19 @@ class EmergencyController:
                     ),
                     rut_reportante=str(d.get("user_id", "")),
                     nombre_reportante=f"Usuario {d.get('user_id', '')}",
-                    fecha_reporte=datetime.fromisoformat(
-                        d.get("created_at", datetime.now().isoformat())
-                    ),
+                    fecha_reporte=self._parsear_fecha(d.get("created_at")),
                 )
                 resultado.append(emergencia)
             except Exception:
                 continue
         return resultado
+
+    def _parsear_fecha(self, valor: object) -> datetime:
+        if isinstance(valor, datetime):
+            return valor
+        if not valor:
+            return datetime.now()
+        return datetime.fromisoformat(str(valor).replace("Z", "+00:00"))
 
     def listar_por_estado(self, estado: EstadoEmergencia) -> list[Emergencia]:
         return self._repo.filter_by_estado(estado)
@@ -105,8 +126,24 @@ class EmergencyController:
     def obtener(self, emergencia_id: int) -> Optional[Emergencia]:
         return self._repo.find_by_id(emergencia_id)
 
-    def estadisticas(self) -> dict[EstadoEmergencia, int]:
-        return self._repo.count_by_estado()
+    def estadisticas(
+        self, emergencias: list[Emergencia] | None = None
+    ) -> dict[EstadoEmergencia, int]:
+        datos = emergencias if emergencias is not None else self.listar()
+        return {
+            EstadoEmergencia.PENDIENTE: sum(
+                1 for e in datos if e.estado == EstadoEmergencia.PENDIENTE
+            ),
+            EstadoEmergencia.EN_REVISION: sum(
+                1 for e in datos if e.estado == EstadoEmergencia.EN_REVISION
+            ),
+            EstadoEmergencia.ATENDIDO: sum(
+                1 for e in datos if e.estado == EstadoEmergencia.ATENDIDO
+            ),
+            EstadoEmergencia.RESUELTO: sum(
+                1 for e in datos if e.estado == EstadoEmergencia.RESUELTO
+            ),
+        }
 
     def registrar(
         self,

@@ -260,8 +260,9 @@ class DashboardView(QWidget):
 
     def refrescar(self) -> None:
         self.lbl_error_backend.setVisible(False)
-        
-        stats = self._controller.estadisticas()
+
+        emergencias = self._controller.listar()
+        stats = self._controller.estadisticas(emergencias)
         self.kpi_pendientes[1].setText(str(stats[EstadoEmergencia.PENDIENTE]))
         self.kpi_revision[1].setText(str(stats[EstadoEmergencia.EN_REVISION]))
         self.kpi_atendidos[1].setText(str(stats[EstadoEmergencia.ATENDIDO]))
@@ -273,17 +274,11 @@ class DashboardView(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-        recientes = self._controller.listar()[:4]
-        
-        # Verificar si el backend respondió revisando si hay datos o no
-        if self._controller._api is not None:
-            datos_backend = self._controller._api.get_emergencies()
-            if datos_backend is None:
-                self.lbl_error_backend.setText(
-                    "⚠️ No se pudo conectar con el backend. "
-                    "Verifica que el servidor esté encendido."
-                )
-                self.lbl_error_backend.setVisible(True)
+        recientes = emergencias[:4]
+
+        if self._controller.backend_error:
+            self.lbl_error_backend.setText(f"⚠️ {self._controller.backend_error}")
+            self.lbl_error_backend.setVisible(True)
 
         if not recientes:
             vacio = QLabel("No hay reportes aún.")

@@ -7,6 +7,7 @@ Se utilizan dataclasses para mantener los modelos simples, serializables
 y fáciles de mapear a/desde JSON cuando el backend FastAPI esté disponible.
 """
 
+import unicodedata
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -16,19 +17,23 @@ from typing import TypeVar
 EnumT = TypeVar("EnumT", bound=Enum)
 
 
+def normalizar_texto(valor: str) -> str:
+    """Normaliza texto para comparar enums con o sin tildes, espacios o guiones."""
+    texto = valor.strip().replace("_", " ").lower()
+    texto = unicodedata.normalize("NFD", texto)
+    return "".join(c for c in texto if unicodedata.category(c) != "Mn")
+
+
 def normalizar_enum(valor: EnumT | str, enum_cls: type[EnumT], campo: str) -> EnumT:
     """Convierte strings válidos al enum esperado y rechaza valores inválidos."""
     if isinstance(valor, enum_cls):
         return valor
     if isinstance(valor, str):
-        texto = valor.strip()
+        texto = normalizar_texto(valor)
         for miembro in enum_cls:
-            if (
-                texto == miembro.value
-                or texto == miembro.name
-                or texto.lower() == miembro.value.lower()
-                or texto.lower() == miembro.name.lower()
-                or texto.replace("_", " ").lower() == miembro.value.lower()
+            if texto in (
+                normalizar_texto(miembro.value),
+                normalizar_texto(miembro.name),
             ):
                 return miembro
     raise ValueError(f"{campo} inválido: {valor!r}")
@@ -44,6 +49,8 @@ class TipoEmergencia(str, Enum):
     ACCIDENTE = "Accidente"
     INCENDIO = "Incendio"
     ROBO = "Robo"
+    ROBO_EN_PROCESO = "Robo en proceso"
+    INUNDACION_MENOR = "Inundación menor"
     PERSONA_EXTRAVIADA = "Persona extraviada"
     EMERGENCIA_MEDICA = "Emergencia médica"
     SOLICITUD_AYUDA = "Solicitud de ayuda"
