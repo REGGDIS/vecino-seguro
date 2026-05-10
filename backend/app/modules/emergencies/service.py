@@ -1,7 +1,42 @@
 """Reglas de negocio para emergencias."""
 
 from app.modules.emergencies.repository import EmergencyRepository
-from app.modules.emergencies.schemas import EmergencySummary
+from app.modules.emergencies.schemas import (
+    EmergencyCatalogs,
+    EmergencyCreate,
+    EmergencySummary,
+)
+
+
+EMERGENCY_TYPES = [
+    {"value": "robo", "label": "Robo"},
+    {"value": "incendio", "label": "Incendio"},
+    {"value": "accidente", "label": "Accidente"},
+    {"value": "emergencia_medica", "label": "Emergencia médica"},
+    {"value": "corte_luz", "label": "Corte de luz"},
+    {"value": "persona_extraviada", "label": "Persona extraviada"},
+    {"value": "solicitud_ayuda", "label": "Solicitud de ayuda"},
+    {"value": "otro", "label": "Otro"},
+]
+
+URGENCY_LEVELS = [
+    {"value": "baja", "label": "Baja"},
+    {"value": "media", "label": "Media"},
+    {"value": "alta", "label": "Alta"},
+    {"value": "critica", "label": "Crítica"},
+]
+
+STATUSES = [
+    {"value": "pendiente", "label": "Pendiente"},
+    {"value": "en_revision", "label": "En revisión"},
+    {"value": "resuelto", "label": "Resuelto"},
+]
+
+INITIAL_STATUS = "pendiente"
+
+
+class EmergencyValidationError(ValueError):
+    """Error de validacion de reglas de negocio de emergencias."""
 
 
 class EmergencyService:
@@ -14,3 +49,49 @@ class EmergencyService:
         """Retorna emergencias desde el repositorio cuando exista persistencia."""
         return self.repository.list_emergencies()
 
+    def get_catalogs(self) -> EmergencyCatalogs:
+        """Retorna catalogos fijos sin consultar la base de datos."""
+        return EmergencyCatalogs(
+            emergency_types=EMERGENCY_TYPES,
+            urgency_levels=URGENCY_LEVELS,
+            statuses=STATUSES,
+        )
+
+    def create_emergency(
+        self,
+        emergency_data: EmergencyCreate,
+    ) -> EmergencySummary:
+        """Valida y registra una emergencia con estado inicial pendiente."""
+        self._validate_required_fields(emergency_data)
+        self._validate_catalog_values(emergency_data)
+
+        return self.repository.create_emergency(
+            emergency_data=emergency_data,
+            status=INITIAL_STATUS,
+        )
+
+    def _validate_required_fields(self, emergency_data: EmergencyCreate) -> None:
+        if emergency_data.user_id is None:
+            raise EmergencyValidationError("El usuario es obligatorio")
+
+        required_text_fields = {
+            "type": "El tipo de emergencia es obligatorio",
+            "description": "La descripcion es obligatoria",
+            "location": "La ubicacion es obligatoria",
+            "urgency_level": "El nivel de urgencia es obligatorio",
+        }
+
+        for field_name, message in required_text_fields.items():
+            value = getattr(emergency_data, field_name)
+            if not value or not value.strip():
+                raise EmergencyValidationError(message)
+
+    def _validate_catalog_values(self, emergency_data: EmergencyCreate) -> None:
+        valid_types = {option["value"] for option in EMERGENCY_TYPES}
+        valid_urgency_levels = {option["value"] for option in URGENCY_LEVELS}
+
+        if emergency_data.type not in valid_types:
+            raise EmergencyValidationError("El tipo de emergencia no es valido")
+
+        if emergency_data.urgency_level not in valid_urgency_levels:
+            raise EmergencyValidationError("El nivel de urgencia no es valido")

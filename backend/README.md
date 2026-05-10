@@ -46,10 +46,10 @@ Ejemplo de respuesta:
 
 Este endpoint permite verificar que la API está levantada correctamente.
 
-## Endpoint de emergencias
+## Endpoints de emergencias
 
 ```text
-GET /api/v1/emergencies
+GET /api/v1/emergencies/
 ```
 
 Devuelve el listado de emergencias almacenadas en MySQL, ordenadas por fecha de creación descendente.
@@ -80,6 +80,68 @@ Antes de probar este endpoint, se debe:
 4. Ejecutar el backend con `uvicorn app.main.main:app --reload`.
 
 Si la base de datos no responde o la consulta falla, el endpoint retorna `500` con un mensaje genérico.
+
+```text
+GET /api/v1/emergencies/catalogs
+```
+
+Devuelve catálogos fijos para formularios y filtros de emergencias. Este endpoint no consulta MySQL.
+
+Ejemplo de respuesta:
+
+```json
+{
+  "emergency_types": [
+    { "value": "robo", "label": "Robo" },
+    { "value": "incendio", "label": "Incendio" },
+    { "value": "accidente", "label": "Accidente" },
+    { "value": "emergencia_medica", "label": "Emergencia médica" },
+    { "value": "corte_luz", "label": "Corte de luz" },
+    { "value": "persona_extraviada", "label": "Persona extraviada" },
+    { "value": "solicitud_ayuda", "label": "Solicitud de ayuda" },
+    { "value": "otro", "label": "Otro" }
+  ],
+  "urgency_levels": [
+    { "value": "baja", "label": "Baja" },
+    { "value": "media", "label": "Media" },
+    { "value": "alta", "label": "Alta" },
+    { "value": "critica", "label": "Crítica" }
+  ],
+  "statuses": [
+    { "value": "pendiente", "label": "Pendiente" },
+    { "value": "en_revision", "label": "En revisión" },
+    { "value": "resuelto", "label": "Resuelto" }
+  ]
+}
+```
+
+```text
+POST /api/v1/emergencies/
+```
+
+Crea una emergencia real en MySQL. El backend valida `type` y `urgency_level` contra los catálogos permitidos y asigna automáticamente `status = pendiente`.
+
+Body de ejemplo:
+
+```json
+{
+  "user_id": 2,
+  "type": "incendio",
+  "description": "Humo visible en una vivienda cercana",
+  "location": "Pasaje Los Aromos 123",
+  "urgency_level": "alta"
+}
+```
+
+Si la creación es correcta, responde `201 Created` con la emergencia creada, incluyendo `id`, `created_at` y `updated_at` generados por la base de datos.
+
+Para probar los endpoints desde Swagger:
+
+1. Ejecutar el backend con `uvicorn app.main.main:app --reload`.
+2. Abrir `http://127.0.0.1:8000/docs`.
+3. Probar `GET /api/v1/emergencies/catalogs`.
+4. Probar `POST /api/v1/emergencies/` con el body de ejemplo.
+5. Verificar que la nueva emergencia aparezca en `GET /api/v1/emergencies/`.
 
 ## Módulos preparados
 

@@ -6,7 +6,7 @@ cuenta: deben hacerlo siempre a través de este repositorio.
 """
 
 from app.db.connection import get_connection
-from app.modules.emergencies.schemas import EmergencySummary
+from app.modules.emergencies.schemas import EmergencyCreate, EmergencySummary
 
 
 class EmergencyRepository:
@@ -41,6 +41,73 @@ class EmergencyRepository:
             cursor.execute(query)
             rows = cursor.fetchall()
             return [EmergencySummary(**row) for row in rows]
+        finally:
+            if cursor is not None:
+                cursor.close()
+            connection.close()
+
+    def create_emergency(
+        self,
+        emergency_data: EmergencyCreate,
+        status: str,
+    ) -> EmergencySummary:
+        """Inserta una emergencia y retorna el registro creado desde MySQL."""
+        insert_query = """
+            INSERT INTO emergencies (
+                user_id,
+                type,
+                description,
+                location,
+                urgency_level,
+                status
+            )
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        select_query = """
+            SELECT
+                id,
+                user_id,
+                type,
+                description,
+                location,
+                urgency_level,
+                status,
+                created_at,
+                updated_at
+            FROM emergencies
+            WHERE id = %s
+        """
+
+        connection = get_connection()
+        cursor = None
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(
+                insert_query,
+                (
+                    emergency_data.user_id,
+                    emergency_data.type,
+                    emergency_data.description,
+                    emergency_data.location,
+                    emergency_data.urgency_level,
+                    status,
+                ),
+            )
+            connection.commit()
+
+            emergency_id = cursor.lastrowid
+            cursor.execute(select_query, (emergency_id,))
+            row = cursor.fetchone()
+            if row is None:
+                raise RuntimeError("No fue posible recuperar la emergencia creada")
+
+            return EmergencySummary(**row)
+        except Exception:
+            try:
+                connection.rollback()
+            except Exception:
+                pass
+            raise
         finally:
             if cursor is not None:
                 cursor.close()

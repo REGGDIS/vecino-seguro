@@ -6,6 +6,31 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+class CatalogOption(BaseModel):
+    """Opcion disponible en un catalogo usado por emergencias."""
+
+    value: str
+    label: str
+
+
+class EmergencyCatalogs(BaseModel):
+    """Catalogos fijos para formularios y filtros de emergencias."""
+
+    emergency_types: list[CatalogOption]
+    urgency_levels: list[CatalogOption]
+    statuses: list[CatalogOption]
+
+
+class EmergencyCreate(BaseModel):
+    """Datos requeridos para registrar una nueva emergencia."""
+
+    user_id: int
+    type: str
+    description: str
+    location: str
+    urgency_level: str
+
+
 class EmergencySummary(BaseModel):
     """Resumen de una emergencia para listados y paneles.
 
