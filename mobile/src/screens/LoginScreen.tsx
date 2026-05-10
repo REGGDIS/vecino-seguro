@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppLayout } from "../components/AppLayout";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { colors, radii, shadows, spacing } from "../styles/theme";
 
@@ -43,55 +43,71 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   };
 
   return (
-    <AppLayout>
-      <View style={styles.container}>
-        <View style={styles.brandHeader}>
-          <View style={styles.logoMark}>
-            <Text style={styles.logoText}>VS</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.container}>
+            <View style={styles.brandHeader}>
+              <Image
+                accessibilityLabel="Isotipo VecinoSeguro"
+                resizeMode="contain"
+                source={require("../assets/isotipo-vecino-seguro.png")}
+                style={styles.logo}
+              />
+              <Text style={styles.brandName}>
+                Vecino<Text style={styles.brandAccent}>Seguro</Text>
+              </Text>
+              <Text style={styles.description}>
+                Reporta emergencias y coordina ayuda vecinal de forma rápida y segura.
+              </Text>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.title}>Ingreso vecinal</Text>
+              <Text style={styles.helper}>Usa tus credenciales comunitarias para acceder al panel móvil.</Text>
+
+              <View style={styles.field}>
+                <Text style={styles.label}>RUT</Text>
+                <TextInput
+                  accessibilityLabel="RUT"
+                  autoCapitalize="characters"
+                  keyboardType="default"
+                  onChangeText={setRut}
+                  placeholder="12.345.678-9"
+                  placeholderTextColor={colors.textSecondary}
+                  style={styles.input}
+                  value={rut}
+                />
+              </View>
+
+              <View style={styles.field}>
+                <Text style={styles.label}>Contraseña</Text>
+                <TextInput
+                  accessibilityLabel="Contraseña"
+                  onChangeText={setPassword}
+                  placeholder="Ingresa tu contraseña"
+                  placeholderTextColor={colors.textSecondary}
+                  secureTextEntry
+                  style={styles.input}
+                  value={password}
+                />
+              </View>
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              <PrimaryButton label="Ingresar" onPress={handleLogin} />
+            </View>
           </View>
-          <Text style={styles.brandName}>
-            Vecino<Text style={styles.brandAccent}>Seguro</Text>
-          </Text>
-          <Text style={styles.description}>
-            Reporta emergencias y coordina ayuda vecinal de forma rápida y segura.
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.title}>Ingreso vecinal</Text>
-          <Text style={styles.helper}>Usa tus credenciales comunitarias para acceder al panel móvil.</Text>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>RUT</Text>
-            <TextInput
-              autoCapitalize="characters"
-              keyboardType="default"
-              onChangeText={setRut}
-              placeholder="12.345.678-9"
-              placeholderTextColor={colors.textSecondary}
-              style={styles.input}
-              value={rut}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Contraseña</Text>
-            <TextInput
-              onChangeText={setPassword}
-              placeholder="Ingresa tu contraseña"
-              placeholderTextColor={colors.textSecondary}
-              secureTextEntry
-              style={styles.input}
-              value={password}
-            />
-          </View>
-
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-
-          <PrimaryButton label="Ingresar" onPress={handleLogin} />
-        </View>
-      </View>
-    </AppLayout>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -121,6 +137,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
+    width: "100%",
   },
   description: {
     color: colors.textSecondary,
@@ -160,21 +177,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
-  logoMark: {
-    alignItems: "center",
-    backgroundColor: colors.white,
-    borderColor: colors.success,
-    borderRadius: radii.lg,
-    borderWidth: 3,
-    height: 76,
-    justifyContent: "center",
-    width: 76,
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  logo: {
+    alignSelf: "center",
+    height: 116,
+    marginBottom: spacing.sm,
+    width: 116,
     ...shadows.card,
   },
-  logoText: {
-    color: colors.primary,
-    fontSize: 24,
-    fontWeight: "900",
+  safeArea: {
+    backgroundColor: colors.surface,
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: spacing.xl,
+    paddingBottom: spacing.xxl,
   },
   title: {
     color: colors.text,
