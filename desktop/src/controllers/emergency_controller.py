@@ -63,7 +63,38 @@ class EmergencyController:
     # API extendida para uso desde las vistas
     # ------------------------------------------------------------------
     def listar(self) -> list[Emergencia]:
+        if self._api is not None:
+            datos = self._api.get_emergencies()
+            if datos is not None:
+                return self._parsear_emergencias(datos)
         return self._repo.list_all()
+
+    def _parsear_emergencias(self, datos: list[dict]) -> list[Emergencia]:
+        """Convierte los dicts del backend en objetos Emergencia."""
+        resultado = []
+        for d in datos:
+            try:
+                emergencia = Emergencia(
+                    id=d.get("id", 0),
+                    tipo=normalizar_enum(d.get("type", ""), TipoEmergencia, "tipo"),
+                    descripcion=d.get("description", ""),
+                    ubicacion=d.get("location", ""),
+                    nivel_urgencia=normalizar_enum(
+                        d.get("urgency_level", ""), NivelUrgencia, "nivel_urgencia"
+                    ),
+                    estado=normalizar_enum(
+                        d.get("status", ""), EstadoEmergencia, "estado"
+                    ),
+                    rut_reportante=str(d.get("user_id", "")),
+                    nombre_reportante=f"Usuario {d.get('user_id', '')}",
+                    fecha_reporte=datetime.fromisoformat(
+                        d.get("created_at", datetime.now().isoformat())
+                    ),
+                )
+                resultado.append(emergencia)
+            except Exception:
+                continue
+        return resultado
 
     def listar_por_estado(self, estado: EstadoEmergencia) -> list[Emergencia]:
         return self._repo.filter_by_estado(estado)

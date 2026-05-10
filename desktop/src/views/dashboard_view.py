@@ -110,6 +110,16 @@ class DashboardView(QWidget):
         self.recientes_container.setLayout(self.recientes_box)
         layout.addWidget(self.recientes_container)
         
+        self.lbl_error_backend = QLabel("")
+        self.lbl_error_backend.setStyleSheet(
+            "color: #D92D20; background: #FFF0F0; border-radius: 8px; "
+            "padding: 12px; font-size: 13px;"
+        )
+        self.lbl_error_backend.setAlignment(Qt.AlignCenter)
+        self.lbl_error_backend.setWordWrap(True)
+        self.lbl_error_backend.setVisible(False)
+        layout.addWidget(self.lbl_error_backend)
+        
         layout.addStretch()
 
     # ---- Helpers de construcción de tarjetas ----
@@ -249,6 +259,8 @@ class DashboardView(QWidget):
         self.lbl_subtitulo.setText(f"Sesión iniciada como {rol_texto}")
 
     def refrescar(self) -> None:
+        self.lbl_error_backend.setVisible(False)
+        
         stats = self._controller.estadisticas()
         self.kpi_pendientes[1].setText(str(stats[EstadoEmergencia.PENDIENTE]))
         self.kpi_revision[1].setText(str(stats[EstadoEmergencia.EN_REVISION]))
@@ -262,6 +274,17 @@ class DashboardView(QWidget):
                 item.widget().deleteLater()
 
         recientes = self._controller.listar()[:4]
+        
+        # Verificar si el backend respondió revisando si hay datos o no
+        if self._controller._api is not None:
+            datos_backend = self._controller._api.get_emergencies()
+            if datos_backend is None:
+                self.lbl_error_backend.setText(
+                    "⚠️ No se pudo conectar con el backend. "
+                    "Verifica que el servidor esté encendido."
+                )
+                self.lbl_error_backend.setVisible(True)
+
         if not recientes:
             vacio = QLabel("No hay reportes aún.")
             vacio.setStyleSheet("color: #9CA3AF; padding: 24px; font-style: italic;")
