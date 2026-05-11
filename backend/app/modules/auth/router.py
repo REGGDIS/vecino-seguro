@@ -1,13 +1,13 @@
-"""Rutas base para autenticación.
-
-El login considera RUT y contraseña, pero todavía no consulta una base de datos
-real ni emite tokens definitivos.
-"""
+"""Rutas base para autenticación."""
 
 from fastapi import APIRouter, HTTPException, status
 
 from app.modules.auth.schemas import LoginRequest, LoginResponse
-from app.modules.auth.service import AuthService
+from app.modules.auth.service import (
+    AuthService,
+    InvalidCredentialsError,
+    InvalidLoginDataError,
+)
 
 router = APIRouter()
 auth_service = AuthService()
@@ -15,16 +15,21 @@ auth_service = AuthService()
 
 @router.post("/login", response_model=LoginResponse)
 def login(payload: LoginRequest) -> LoginResponse:
-    """Valida formato inicial de credenciales y deja preparado el login real."""
-    result = auth_service.validate_login_request(payload.rut, payload.password)
-    if not result:
+    """Autentica un usuario con RUT y contraseña."""
+    try:
+        return auth_service.login(payload.rut, payload.password)
+    except InvalidLoginDataError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="RUT o contraseña con formato inválido.",
-        )
-
-    return LoginResponse(
-        message="Solicitud de login válida. Integración con base de datos pendiente.",
-        token=None,
-    )
-
+        ) from None
+    except InvalidCredentialsError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="RUT o contraseña incorrectos",
+        ) from None
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno al procesar login.",
+        ) from None

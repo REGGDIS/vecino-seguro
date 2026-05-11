@@ -143,6 +143,66 @@ Para probar los endpoints desde Swagger:
 4. Probar `POST /api/v1/emergencies/` con el body de ejemplo.
 5. Verificar que la nueva emergencia aparezca en `GET /api/v1/emergencies/`.
 
+## Login real con RUT y contraseña
+
+El backend autentica usuarios contra MySQL/MariaDB usando RUT chileno y contraseña bcrypt.
+
+Antes de probar el login:
+
+1. Instalar dependencias desde `backend/`.
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Configurar `backend/.env` usando `backend/.env.example` como referencia.
+3. Cargar la estructura de base de datos con `database/schema.sql`.
+4. Cargar datos ficticios de desarrollo con `database/seed.sql`.
+5. Ejecutar el backend desde `backend/`.
+   ```bash
+   uvicorn app.main.main:app --reload
+   ```
+
+Endpoint:
+
+```text
+POST /api/v1/auth/login
+```
+
+Body de prueba para usuario administrador:
+
+```json
+{
+  "rut": "11111111-1",
+  "password": "admin1234"
+}
+```
+
+Respuesta esperada:
+
+```json
+{
+  "success": true,
+  "message": "Login exitoso",
+  "user": {
+    "id": 1,
+    "rut": "11111111-1",
+    "full_name": "Administradora Vecinal",
+    "email": "admin@vecinoseguro.cl",
+    "role_id": 1
+  }
+}
+```
+
+También existe un usuario vecino de prueba:
+
+```json
+{
+  "rut": "22222222-2",
+  "password": "vecino1234"
+}
+```
+
+Estas credenciales son ficticias y solo sirven para desarrollo y demostración.
+
 ## Módulos preparados
 
 - `auth`: autenticación con RUT y contraseña.

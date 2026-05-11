@@ -3,9 +3,9 @@
 -- =============================================================================
 -- Archivo:      seed.sql
 -- Propósito:    Insertar datos de ejemplo para desarrollo y demostración.
--- Importante:   Todos los datos son ficticios. Las contraseñas se muestran
---               como hashes de ejemplo y no deben usarse en ningún entorno
---               real. En producción deben generarse con bcrypt o argon2.
+-- Importante:   Todos los datos son ficticios. Las credenciales documentadas
+--               son solo para desarrollo y demostración; no deben usarse en
+--               producción. En producción deben generarse hashes nuevos.
 -- =============================================================================
 
 USE vecino_seguro;
@@ -22,26 +22,32 @@ ON DUPLICATE KEY UPDATE description = VALUES(description);
 -- -----------------------------------------------------------------------------
 -- 2. Usuarios de ejemplo
 --    RUT con formato chileno válido (algoritmo módulo 11).
---    password_hash es un valor ficticio identificable. NO usar en producción.
+--    Credenciales ficticias para desarrollo y demostración:
+--      admin@vecinoseguro.cl -> admin1234
+--      carlos.perez@vecinoseguro.cl -> vecino1234
+--      maria.gonzalez@vecinoseguro.cl -> vecino1234
+--    password_hash contiene hashes bcrypt válidos. NO usar en producción.
 -- -----------------------------------------------------------------------------
 INSERT INTO users (rut, full_name, email, password_hash, role_id)
 VALUES
   ('11111111-1',
    'Administradora Vecinal',
    'admin@vecinoseguro.cl',
-   '$2b$12$ficticio.admin.no.usar.en.produccion.AAAAAAAAAAAAAAA',
+   '$2b$12$abcdefghijklmnopqrstuuQGuv7JMXhF88lMrtF64dVMmrFWSg9Hy',
    1),
   ('22222222-2',
    'Carlos Pérez Soto',
    'carlos.perez@vecinoseguro.cl',
-   '$2b$12$ficticio.vecino1.no.usar.en.produccion.BBBBBBBBBBBBB',
+   '$2b$12$abcdefghijklmnopqrstuut5sNDb4knLOg6.NM2MEDpS74Bo24SPG',
    2),
   ('13456789-9',
    'María González Rojas',
    'maria.gonzalez@vecinoseguro.cl',
-   '$2b$12$ficticio.vecino2.no.usar.en.produccion.CCCCCCCCCCCCC',
+   '$2b$12$abcdefghijklmnopqrstuut5sNDb4knLOg6.NM2MEDpS74Bo24SPG',
    2)
-ON DUPLICATE KEY UPDATE full_name = VALUES(full_name);
+ON DUPLICATE KEY UPDATE
+  full_name = VALUES(full_name),
+  password_hash = VALUES(password_hash);
 
 -- -----------------------------------------------------------------------------
 -- 3. Emergencias de ejemplo
