@@ -154,3 +154,21 @@ Para probar los endpoints desde Swagger:
 
 Usa `.env.example` como referencia para crear un archivo `.env` local. No se deben versionar credenciales reales.
 
+
+## Endpoint de resumen para dashboard
+
+```text
+GET /api/v1/reports/summary
+```
+
+Entrega un resumen general de emergencias registradas en MySQL/MariaDB.
+
+La respuesta incluye:
+
+- Total de emergencias.
+- Conteo por estado.
+- Conteo por nivel de urgencia.
+
+Este endpoint es de solo lectura y está pensado para ser consumido posteriormente por el dashboard desktop o móvil.
+
+
