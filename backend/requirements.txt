@@ -6,4 +6,5 @@ mysql-connector-python
 SQLAlchemy
 pytest
 httpx
-
+passlib[bcrypt]
+bcrypt==4.0.1

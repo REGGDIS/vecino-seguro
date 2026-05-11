@@ -32,3 +32,15 @@ def validate_rut(rut: str) -> bool:
 
     return verifier == expected
 
+
+def format_rut(cleaned: str) -> str:
+    """Formatea un RUT limpio como 12345678-9."""
+    return f"{cleaned[:-1]}-{cleaned[-1]}"
+
+
+def normalize_rut(rut: str) -> str:
+    """Normaliza un RUT válido al formato usado por la base de datos."""
+    cleaned = clean_rut(rut)
+    if len(cleaned) < 2:
+        return ""
+    return format_rut(cleaned)

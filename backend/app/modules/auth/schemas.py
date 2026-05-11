@@ -6,13 +6,23 @@ from pydantic import BaseModel, Field
 class LoginRequest(BaseModel):
     """Datos requeridos para iniciar sesión."""
 
-    rut: str = Field(..., examples=["12.345.678-5"])
-    password: str = Field(..., min_length=8, examples=["change_me_secure"])
+    rut: str = Field(..., examples=["11111111-1"])
+    password: str = Field(..., min_length=1, examples=["admin1234"])
+
+
+class AuthenticatedUser(BaseModel):
+    """Datos seguros del usuario autenticado."""
+
+    id: int
+    rut: str
+    full_name: str
+    email: str
+    role_id: int
 
 
 class LoginResponse(BaseModel):
-    """Respuesta inicial del flujo de login."""
+    """Respuesta segura del flujo de login."""
 
+    success: bool
     message: str
-    token: str | None = None
-
+    user: AuthenticatedUser
