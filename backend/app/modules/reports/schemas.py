@@ -10,3 +10,10 @@ class ReportSummary(BaseModel):
     open_emergencies: int
     resolved_emergencies: int
 
+
+class ReportsSummaryResponse(BaseModel):
+    """Resumen general de emergencias para dashboard."""
+
+    total_emergencies: int
+    by_status: dict[str, int]
+    by_urgency: dict[str, int]

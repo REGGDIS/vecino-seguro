@@ -1,16 +1,15 @@
-"""Rutas base para reportes y métricas."""
+"""Rutas para reportes y métricas agregadas."""
 
 from fastapi import APIRouter
 
-from app.modules.reports.schemas import ReportSummary
+from app.modules.reports.schemas import ReportsSummaryResponse
 from app.modules.reports.service import ReportService
 
 router = APIRouter()
 report_service = ReportService()
 
 
-@router.get("/summary", response_model=ReportSummary)
-def get_summary() -> ReportSummary:
-    """Entrega un resumen inicial sin datos reales todavía."""
+@router.get("/summary", response_model=ReportsSummaryResponse)
+def get_summary() -> ReportsSummaryResponse:
+    """Entrega estadísticas agregadas de emergencias."""
     return report_service.get_summary()
-
