@@ -235,3 +235,22 @@ QScrollBar::handle:vertical {
 }
 QScrollBar::handle:vertical:hover { background: #6B85A8; }
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+
+/* === Chip de estado del backend === */
+QLabel#chipOnline {
+    background-color: #E5F4EA;
+    color: #16812C;
+    padding: 4px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QLabel#chipOffline {
+    background-color: #FDE8E8;
+    color: #D92D20;
+    padding: 4px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+}

@@ -28,6 +28,7 @@ from src.core.constants import (
     DEFAULT_WINDOW_WIDTH,
 )
 from src.models.entities import Rol, Usuario
+from src.services.api_client import ApiClient
 from src.views.dashboard_view import DashboardView
 from src.views.emergency_form_view import EmergencyFormView
 from src.views.emergency_list_view import EmergencyListView
@@ -198,6 +199,8 @@ class MainWindow(QMainWindow):
         )
         self.list_view.cambio_realizado.connect(self.dashboard.refrescar)
 
+        self._actualizar_estado_backend()
+
         root.addWidget(self.sidebar)
         root.addWidget(self.content_area, 1)
 
@@ -264,3 +267,19 @@ class MainWindow(QMainWindow):
     def _cerrar_sesion(self) -> None:
         self._auth.logout()
         self._on_logout()
+
+    def _actualizar_estado_backend(self) -> None:
+        """Consulta GET /health y actualiza el chip de estado."""
+        try:
+            ApiClient().health_check()
+            self.lbl_chip.setText("● En línea")
+            self.lbl_chip.setStyleSheet(
+                "background-color: #E5F4EA; color: #16812C; "
+                "padding: 4px 12px; border-radius: 10px; font-size: 11px; font-weight: 600;"
+            )
+        except Exception:
+            self.lbl_chip.setText("● Sin conexión")
+            self.lbl_chip.setStyleSheet(
+                "background-color: #FDE8E8; color: #D92D20; "
+                "padding: 4px 12px; border-radius: 10px; font-size: 11px; font-weight: 600;"
+            )
