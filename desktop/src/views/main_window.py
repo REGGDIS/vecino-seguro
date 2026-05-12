@@ -173,10 +173,7 @@ class MainWindow(QMainWindow):
         tb.addWidget(self.lbl_titulo_pagina)
         tb.addStretch()
         self.lbl_chip = QLabel("● En línea")
-        self.lbl_chip.setStyleSheet(
-            "background-color: #E5F4EA; color: #16812C; "
-            "padding: 4px 12px; border-radius: 10px; font-size: 11px; font-weight: 600;"
-        )
+        self.lbl_chip.setObjectName("chipOnline")
         tb.addWidget(self.lbl_chip)
         ca.addWidget(topbar)
 
@@ -268,18 +265,18 @@ class MainWindow(QMainWindow):
         self._auth.logout()
         self._on_logout()
 
+    def _set_backend_chip_state(self, online: bool) -> None:
+        self.lbl_chip.setText("● En línea" if online else "● Sin conexión")
+        self.lbl_chip.setObjectName("chipOnline" if online else "chipOffline")
+
+        self.lbl_chip.style().unpolish(self.lbl_chip)
+        self.lbl_chip.style().polish(self.lbl_chip)
+        self.lbl_chip.update()
+
     def _actualizar_estado_backend(self) -> None:
         """Consulta GET /health y actualiza el chip de estado."""
         try:
             ApiClient().health_check()
-            self.lbl_chip.setText("● En línea")
-            self.lbl_chip.setStyleSheet(
-                "background-color: #E5F4EA; color: #16812C; "
-                "padding: 4px 12px; border-radius: 10px; font-size: 11px; font-weight: 600;"
-            )
+            self._set_backend_chip_state(True)
         except Exception:
-            self.lbl_chip.setText("● Sin conexión")
-            self.lbl_chip.setStyleSheet(
-                "background-color: #FDE8E8; color: #D92D20; "
-                "padding: 4px 12px; border-radius: 10px; font-size: 11px; font-weight: 600;"
-            )
+            self._set_backend_chip_state(False)
