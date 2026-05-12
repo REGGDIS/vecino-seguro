@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.controllers.emergency_controller import EmergencyController
-from src.models.entities import NivelUrgencia, TipoEmergencia, Usuario
+from src.models.entities import Usuario
 from src.widgets.buttons import estilizar_boton
 
 
@@ -68,8 +68,6 @@ class EmergencyFormView(QWidget):
         col_tipo.setSpacing(6)
         col_tipo.addWidget(self._lbl("Tipo de emergencia *"))
         self.cb_tipo = QComboBox()
-        for t in TipoEmergencia:
-            self.cb_tipo.addItem(t.value, t)
         col_tipo.addWidget(self.cb_tipo)
         fila1.addLayout(col_tipo)
 
@@ -77,12 +75,11 @@ class EmergencyFormView(QWidget):
         col_urg.setSpacing(6)
         col_urg.addWidget(self._lbl("Nivel de urgencia *"))
         self.cb_urg = QComboBox()
-        for u in NivelUrgencia:
-            self.cb_urg.addItem(u.value, u)
-        self.cb_urg.setCurrentText(NivelUrgencia.MEDIA.value)
         col_urg.addWidget(self.cb_urg)
         fila1.addLayout(col_urg)
         card_lay.addLayout(fila1)
+
+        self._cargar_catalogos()
 
         card_lay.addWidget(self._lbl("Ubicación referencial *"))
         self.input_ubicacion = QLineEdit()
@@ -138,12 +135,18 @@ class EmergencyFormView(QWidget):
 
     def limpiar(self) -> None:
         self.cb_tipo.setCurrentIndex(0)
-        self.cb_urg.setCurrentText(NivelUrgencia.MEDIA.value)
+        idx_media = self.cb_urg.findData("media")
+        self.cb_urg.setCurrentIndex(idx_media if idx_media >= 0 else 0)
         self.input_ubicacion.clear()
         self.input_desc.clear()
 
     def _registrar(self) -> None:
         if not self._usuario:
+            QMessageBox.warning(
+                self,
+                "Sesión requerida",
+                "Debe iniciar sesión para registrar una emergencia.",
+            )
             return
         ok, msg, _ = self._controller.registrar(
             usuario=self._usuario,
@@ -157,4 +160,26 @@ class EmergencyFormView(QWidget):
             self.limpiar()
             self.emergencia_registrada.emit()
         else:
-            QMessageBox.warning(self, "Datos incompletos", msg)
+            titulo = (
+                "No fue posible registrar"
+                if "backend" in msg.lower() or "solicitud" in msg.lower()
+                else "Datos incompletos"
+            )
+            QMessageBox.warning(self, titulo, msg)
+
+    def _cargar_catalogos(self) -> None:
+        catalogos = self._controller.obtener_catalogos()
+        self._cargar_combo(self.cb_tipo, catalogos.get("emergency_types", []))
+        self._cargar_combo(self.cb_urg, catalogos.get("urgency_levels", []))
+
+        idx_media = self.cb_urg.findData("media")
+        if idx_media >= 0:
+            self.cb_urg.setCurrentIndex(idx_media)
+
+    def _cargar_combo(self, combo: QComboBox, opciones: list[dict]) -> None:
+        combo.clear()
+        for opcion in opciones:
+            label = str(opcion.get("label", "")).strip()
+            value = str(opcion.get("value", "")).strip()
+            if label and value:
+                combo.addItem(label, value)

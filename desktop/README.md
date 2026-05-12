@@ -18,7 +18,27 @@ pip install -r requirements.txt
 ## Ejecución
 
 ```bash
-python src/main/main.py
+python -m src.main.main
+```
+
+La app lee `API_BASE_URL` desde variables de entorno. Si no se define,
+usa `http://localhost:8000`.
+
+Para crear emergencias reales, levanta primero el backend FastAPI:
+
+```powershell
+cd D:\Trabajos2026\vecino-seguro\backend
+.\.venv\Scripts\Activate.ps1
+uvicorn app.main.main:app --reload
+```
+
+Luego inicia el desktop desde la raíz del proyecto:
+
+```powershell
+cd D:\Trabajos2026\vecino-seguro
+.\desktop\.venv\Scripts\Activate.ps1
+cd desktop
+python -m src.main.main
 ```
 
 ## Cuentas de prueba
@@ -37,6 +57,24 @@ python src/main/main.py
 - **Formulario de registro de emergencia** con validaciones de negocio.
 - **Listado de emergencias** con filtro por estado y panel de detalle.
 - **Detalle del reporte** con cambio de estado disponible solo para administradores.
+
+## Integración con backend
+
+El formulario de emergencias usa el flujo `Vista → EmergencyController →
+ApiClient → FastAPI` y consume:
+
+- `GET /api/v1/emergencies/catalogs` para cargar tipos y niveles válidos.
+- `POST /api/v1/emergencies/` para registrar emergencias reales.
+- `GET /api/v1/emergencies/` para refrescar dashboard y listado.
+
+El desktop no envía `status`; el backend asigna el estado inicial
+`pendiente`.
+
+Mientras el login desktop siga usando usuarios mock, el controlador usa el
+`usuario.id` si existe. Si no existe, aplica un mapeo temporal contra los
+usuarios de `database/seed.sql`: admin `11111111-1` → `1`, vecino
+`22222222-2` → `2`, vecino `13456789-9` → `3`. Otras cuentas vecinas mock
+usan temporalmente `user_id=2` para permitir la demo contra el backend.
 
 ## Identidad visual
 
@@ -112,6 +150,7 @@ desktop/
 
 ## Próximos pasos
 
-- Conectar `AuthController` y `EmergencyController` con el backend FastAPI a través de `ApiClient`.
+- Conectar `AuthController` con el backend FastAPI para obtener el `user_id`
+  real de la sesión.
 - Agregar tabla de historial de cambios de estado (`emergency_status_history`).
 - Refinar componentes según feedback del equipo y la presentación del 19 de mayo.
