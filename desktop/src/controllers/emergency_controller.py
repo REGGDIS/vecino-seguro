@@ -16,12 +16,64 @@ from src.models.entities import (
     Emergencia,
     EstadoEmergencia,
     NivelUrgencia,
+    Rol,
     TipoEmergencia,
     Usuario,
     normalizar_enum,
 )
 from src.repositories.emergency_repository import EmergencyRepository
-from src.services.api_client import ApiClient
+from src.services.api_client import ApiClient, ApiClientError
+
+
+EMERGENCY_TYPE_OPTIONS = [
+    {"value": "robo", "label": "Robo"},
+    {"value": "incendio", "label": "Incendio"},
+    {"value": "accidente", "label": "Accidente"},
+    {"value": "emergencia_medica", "label": "Emergencia médica"},
+    {"value": "corte_luz", "label": "Corte de luz"},
+    {"value": "persona_extraviada", "label": "Persona extraviada"},
+    {"value": "solicitud_ayuda", "label": "Solicitud de ayuda"},
+    {"value": "otro", "label": "Otro"},
+]
+
+URGENCY_LEVEL_OPTIONS = [
+    {"value": "baja", "label": "Baja"},
+    {"value": "media", "label": "Media"},
+    {"value": "alta", "label": "Alta"},
+    {"value": "critica", "label": "Crítica"},
+]
+
+STATUS_OPTIONS = [
+    {"value": "pendiente", "label": "Pendiente"},
+    {"value": "en_revision", "label": "En revisión"},
+    {"value": "resuelto", "label": "Resuelto"},
+]
+
+BACKEND_TYPE_BY_ENUM = {
+    TipoEmergencia.ROBO: "robo",
+    TipoEmergencia.INCENDIO: "incendio",
+    TipoEmergencia.ACCIDENTE: "accidente",
+    TipoEmergencia.EMERGENCIA_MEDICA: "emergencia_medica",
+    TipoEmergencia.CORTE_LUZ: "corte_luz",
+    TipoEmergencia.PERSONA_EXTRAVIADA: "persona_extraviada",
+    TipoEmergencia.SOLICITUD_AYUDA: "solicitud_ayuda",
+    TipoEmergencia.OTRO: "otro",
+}
+
+BACKEND_URGENCY_BY_ENUM = {
+    NivelUrgencia.BAJA: "baja",
+    NivelUrgencia.MEDIA: "media",
+    NivelUrgencia.ALTA: "alta",
+    NivelUrgencia.CRITICA: "critica",
+}
+
+# Mapeo temporal para las cuentas mock del desktop contra seed.sql.
+PROTOTYPE_BACKEND_USER_ID_BY_RUT = {
+    "11111111-1": 1,
+    "22222222-2": 2,
+    "13456789-9": 3,
+}
+PROTOTYPE_DEFAULT_VECINO_USER_ID = 2
 
 
 class EmergencyController:
@@ -35,6 +87,7 @@ class EmergencyController:
         self._repo = repository or EmergencyRepository()
         self._api = api_client
         self.backend_error: str | None = None
+        self._ultima_lista: list[Emergencia] = []
 
     # ------------------------------------------------------------------
     # API base del stub original (firma compatible)
@@ -63,6 +116,22 @@ class EmergencyController:
     # ------------------------------------------------------------------
     # API extendida para uso desde las vistas
     # ------------------------------------------------------------------
+    def obtener_catalogos(self) -> dict:
+        """Devuelve catalogos del backend o un fallback local compatible."""
+        if self._api is not None:
+            try:
+                catalogos = self._api.get_emergency_catalogs()
+                if self._catalogos_validos(catalogos):
+                    return catalogos
+            except ApiClientError as exc:
+                self.backend_error = exc.message
+
+        return {
+            "emergency_types": EMERGENCY_TYPE_OPTIONS,
+            "urgency_levels": URGENCY_LEVEL_OPTIONS,
+            "statuses": STATUS_OPTIONS,
+        }
+
     def listar(self) -> list[Emergencia]:
         self.backend_error = None
 
@@ -71,6 +140,7 @@ class EmergencyController:
             if datos is not None:
                 emergencias = self._parsear_emergencias(datos)
                 if emergencias or datos == []:
+                    self._ultima_lista = emergencias
                     return emergencias
 
                 self.backend_error = (
@@ -83,32 +153,41 @@ class EmergencyController:
                     "Verifica que el servidor esté encendido."
                 )
 
-        return self._repo.list_all()
+        emergencias_locales = self._repo.list_all()
+        self._ultima_lista = emergencias_locales
+        return emergencias_locales
 
     def _parsear_emergencias(self, datos: list[dict]) -> list[Emergencia]:
         """Convierte los dicts del backend en objetos Emergencia."""
         resultado = []
         for d in datos:
             try:
-                emergencia = Emergencia(
-                    id=d.get("id", 0),
-                    tipo=normalizar_enum(d.get("type", ""), TipoEmergencia, "tipo"),
-                    descripcion=d.get("description", ""),
-                    ubicacion=d.get("location", ""),
-                    nivel_urgencia=normalizar_enum(
-                        d.get("urgency_level", ""), NivelUrgencia, "nivel_urgencia"
-                    ),
-                    estado=normalizar_enum(
-                        d.get("status", ""), EstadoEmergencia, "estado"
-                    ),
-                    rut_reportante=str(d.get("user_id", "")),
-                    nombre_reportante=f"Usuario {d.get('user_id', '')}",
-                    fecha_reporte=self._parsear_fecha(d.get("created_at")),
-                )
-                resultado.append(emergencia)
+                resultado.append(self._parsear_emergencia_backend(d))
             except Exception:
                 continue
         return resultado
+
+    def _parsear_emergencia_backend(
+        self,
+        dato: dict,
+        usuario: Usuario | None = None,
+    ) -> Emergencia:
+        user_id = dato.get("user_id", "")
+        return Emergencia(
+            id=dato.get("id", 0),
+            tipo=normalizar_enum(dato.get("type", ""), TipoEmergencia, "tipo"),
+            descripcion=dato.get("description", ""),
+            ubicacion=dato.get("location", ""),
+            nivel_urgencia=normalizar_enum(
+                dato.get("urgency_level", ""), NivelUrgencia, "nivel_urgencia"
+            ),
+            estado=normalizar_enum(
+                dato.get("status", ""), EstadoEmergencia, "estado"
+            ),
+            rut_reportante=usuario.rut if usuario else str(user_id),
+            nombre_reportante=usuario.nombre if usuario else f"Usuario {user_id}",
+            fecha_reporte=self._parsear_fecha(dato.get("created_at")),
+        )
 
     def _parsear_fecha(self, valor: object) -> datetime:
         if isinstance(valor, datetime):
@@ -118,12 +197,15 @@ class EmergencyController:
         return datetime.fromisoformat(str(valor).replace("Z", "+00:00"))
 
     def listar_por_estado(self, estado: EstadoEmergencia) -> list[Emergencia]:
-        return self._repo.filter_by_estado(estado)
+        return [e for e in self.listar() if e.estado == estado]
 
     def listar_de_usuario(self, rut: str) -> list[Emergencia]:
         return [e for e in self._repo.list_all() if e.rut_reportante == rut]
 
     def obtener(self, emergencia_id: int) -> Optional[Emergencia]:
+        for emergencia in self._ultima_lista:
+            if emergencia.id == emergencia_id:
+                return emergencia
         return self._repo.find_by_id(emergencia_id)
 
     def estadisticas(
@@ -153,7 +235,9 @@ class EmergencyController:
         ubicacion: str,
         nivel_urgencia: NivelUrgencia | str,
     ) -> tuple[bool, str, Optional[Emergencia]]:
-        """Valida los datos del reporte y lo persiste en estado Pendiente."""
+        """Valida los datos del reporte y lo registra en backend si existe."""
+        if usuario is None:
+            return False, "Debe iniciar sesión para registrar una emergencia.", None
         if not descripcion.strip():
             return False, "La descripción no puede estar vacía.", None
         if len(descripcion.strip()) < 10:
@@ -161,10 +245,46 @@ class EmergencyController:
         if not ubicacion.strip():
             return False, "Debe indicar una ubicación.", None
 
-        tipo_normalizado = normalizar_enum(tipo, TipoEmergencia, "tipo")
-        urgencia_normalizada = normalizar_enum(
-            nivel_urgencia, NivelUrgencia, "nivel_urgencia"
-        )
+        try:
+            tipo_normalizado = normalizar_enum(tipo, TipoEmergencia, "tipo")
+            urgencia_normalizada = normalizar_enum(
+                nivel_urgencia, NivelUrgencia, "nivel_urgencia"
+            )
+            backend_type = self._backend_type(tipo_normalizado)
+            backend_urgency = self._backend_urgency(urgencia_normalizada)
+        except ValueError:
+            return (
+                False,
+                "El backend rechazó la solicitud. Verifica tipo, urgencia "
+                "y campos obligatorios.",
+                None,
+            )
+
+        user_id = self._backend_user_id(usuario)
+        if user_id is None:
+            return False, "No se encontró un identificador de usuario válido.", None
+
+        if self._api is not None:
+            payload = {
+                "user_id": user_id,
+                "type": backend_type,
+                "description": descripcion.strip(),
+                "location": ubicacion.strip(),
+                "urgency_level": backend_urgency,
+            }
+            try:
+                creada = self._api.create_emergency(payload)
+                emergencia = self._parsear_emergencia_backend(creada, usuario)
+                return True, f"Emergencia #{emergencia.id} registrada.", emergencia
+            except ApiClientError as exc:
+                return False, exc.message, None
+            except Exception:
+                return (
+                    False,
+                    "La emergencia fue creada, pero no se pudo interpretar "
+                    "la respuesta del backend.",
+                    None,
+                )
 
         nueva = Emergencia(
             id=0,
@@ -179,6 +299,42 @@ class EmergencyController:
         )
         guardada = self._repo.save(nueva)
         return True, f"Emergencia #{guardada.id} registrada.", guardada
+
+    def _catalogos_validos(self, catalogos: object) -> bool:
+        if not isinstance(catalogos, dict):
+            return False
+        for clave in ("emergency_types", "urgency_levels", "statuses"):
+            opciones = catalogos.get(clave)
+            if not isinstance(opciones, list):
+                return False
+            if not all(
+                isinstance(op, dict) and op.get("value") and op.get("label")
+                for op in opciones
+            ):
+                return False
+        return True
+
+    def _backend_type(self, tipo: TipoEmergencia) -> str:
+        if tipo not in BACKEND_TYPE_BY_ENUM:
+            raise ValueError(f"tipo no soportado por backend: {tipo.value}")
+        return BACKEND_TYPE_BY_ENUM[tipo]
+
+    def _backend_urgency(self, urgencia: NivelUrgencia) -> str:
+        return BACKEND_URGENCY_BY_ENUM[urgencia]
+
+    def _backend_user_id(self, usuario: Usuario) -> int | None:
+        user_id = getattr(usuario, "id", None)
+        if isinstance(user_id, int) and user_id > 0:
+            return user_id
+
+        rut_normalizado = usuario.rut.replace(".", "")
+        if rut_normalizado in PROTOTYPE_BACKEND_USER_ID_BY_RUT:
+            return PROTOTYPE_BACKEND_USER_ID_BY_RUT[rut_normalizado]
+
+        if usuario.rol == Rol.VECINO:
+            return PROTOTYPE_DEFAULT_VECINO_USER_ID
+
+        return None
 
     def cambiar_estado(
         self,
