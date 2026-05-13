@@ -134,6 +134,7 @@ class LoginView(QWidget):
         btn = QPushButton("Ingresar")
         estilizar_boton(btn, "primary")
         btn.setMinimumHeight(44)
+        btn.setCursor(Qt.PointingHandCursor)
         btn.clicked.connect(self._intentar_login)
         der_layout.addWidget(btn)
         der_layout.addSpacing(24)
