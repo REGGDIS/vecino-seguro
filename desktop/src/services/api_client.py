@@ -54,6 +54,14 @@ class ApiClient:
         """Obtiene los catalogos validos para registrar emergencias."""
         return self._request_json("GET", "/api/v1/emergencies/catalogs")
 
+    def login(self, rut: str, password: str) -> dict:
+        """Autentica un usuario real contra el backend FastAPI."""
+        return self._request_json(
+            "POST",
+            "/api/v1/auth/login",
+            json={"rut": rut, "password": password},
+        )
+
     def create_emergency(self, payload: dict) -> dict:
         """Crea una emergencia real en el backend FastAPI."""
         return self._request_json("POST", "/api/v1/emergencies/", json=payload)

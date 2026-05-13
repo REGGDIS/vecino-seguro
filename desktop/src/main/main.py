@@ -44,8 +44,11 @@ def main() -> int:
     # ---- Contenedor de dependencias ----
     user_repo = UserRepository()
     emergency_repo = EmergencyRepository()
-    auth_controller = AuthController(user_repository=user_repo)
     api_client = ApiClient()
+    auth_controller = AuthController(
+        user_repository=user_repo,
+        api_client=api_client,
+    )
     emergency_controller = EmergencyController(
         repository=emergency_repo,
         api_client=api_client,
