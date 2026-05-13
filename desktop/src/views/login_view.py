@@ -8,7 +8,7 @@ desacoplada del modelo de datos y del resto de la lógica de negocio.
 from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtSvgWidgets import QSvgWidget
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -23,7 +23,7 @@ from src.controllers.auth_controller import AuthController
 from src.core.rut_validator import RutValidator
 from src.widgets.buttons import estilizar_boton
 
-LOGO_PATH = str(Path(__file__).resolve().parents[1] / "assets" / "logo.svg")
+ISOTIPO_PATH = Path(__file__).resolve().parents[1] / "assets" / "isotipo-vecino-seguro.png"
 
 
 class LoginView(QWidget):
@@ -51,8 +51,19 @@ class LoginView(QWidget):
         izq_layout.setSpacing(20)
         izq_layout.addStretch()
 
-        logo = QSvgWidget(LOGO_PATH)
-        logo.setFixedSize(QSize(140, 140))
+        logo = QLabel()
+        logo_size = QSize(140, 140)
+        logo.setFixedSize(logo_size)
+        logo.setAlignment(Qt.AlignCenter)
+        pixmap = QPixmap(str(ISOTIPO_PATH))
+        if not pixmap.isNull():
+            logo.setPixmap(
+                pixmap.scaled(
+                    logo_size,
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation,
+                )
+            )
         logo.setStyleSheet("background: transparent;")
         izq_layout.addWidget(logo, alignment=Qt.AlignCenter)
 
