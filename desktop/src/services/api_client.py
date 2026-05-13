@@ -58,6 +58,14 @@ class ApiClient:
         """Crea una emergencia real en el backend FastAPI."""
         return self._request_json("POST", "/api/v1/emergencies/", json=payload)
 
+    def update_emergency_status(self, emergency_id: int, payload: dict) -> dict:
+        """Actualiza el estado de una emergencia real en el backend."""
+        return self._request_json(
+            "PATCH",
+            f"/api/v1/emergencies/{emergency_id}/status",
+            json=payload,
+        )
+
     def _request_json(self, method: str, path: str, **kwargs) -> dict | list[dict]:
         """Ejecuta una peticion HTTP y traduce errores a mensajes de usuario."""
         url = f"{self.base_url}{path}"
@@ -100,11 +108,10 @@ class ApiClient:
 
     def _message_for_status(self, status_code: int) -> str:
         if status_code in (400, 422):
-            return (
-                "El backend rechazó la solicitud. Verifica tipo, urgencia "
-                "y campos obligatorios."
-            )
+            return "El backend rechazó la solicitud. Verifica los datos enviados."
+        if status_code == 404:
+            return "No se encontró el recurso solicitado en el backend."
         if status_code >= 500:
-            return "No fue posible registrar la emergencia. Inténtalo nuevamente."
+            return "El backend no pudo procesar la solicitud. Inténtalo nuevamente."
         return "No fue posible completar la solicitud al backend."
 

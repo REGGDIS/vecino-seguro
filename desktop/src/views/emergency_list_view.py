@@ -220,7 +220,11 @@ class EmergencyListView(QWidget):
         )
         cambio_row.addWidget(lbl_e)
         self.cb_nuevo_estado = QComboBox()
-        for est in EstadoEmergencia:
+        for est in (
+            EstadoEmergencia.PENDIENTE,
+            EstadoEmergencia.EN_REVISION,
+            EstadoEmergencia.RESUELTO,
+        ):
             self.cb_nuevo_estado.addItem(est.value, est)
         cambio_row.addWidget(self.cb_nuevo_estado)
         adm_lay.addLayout(cambio_row)
@@ -409,7 +413,9 @@ class EmergencyListView(QWidget):
         if ok:
             QMessageBox.information(self, "Estado actualizado", msg)
             self.cambio_realizado.emit()
+            emergencia_id = self._emergencia_seleccionada_id
             self.refrescar()
-            self._mostrar_detalle(self._emergencia_seleccionada_id)
+            if emergencia_id is not None:
+                self._mostrar_detalle(emergencia_id)
         else:
             QMessageBox.warning(self, "Error", msg)

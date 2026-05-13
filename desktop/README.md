@@ -66,9 +66,17 @@ ApiClient → FastAPI` y consume:
 - `GET /api/v1/emergencies/catalogs` para cargar tipos y niveles válidos.
 - `POST /api/v1/emergencies/` para registrar emergencias reales.
 - `GET /api/v1/emergencies/` para refrescar dashboard y listado.
+- `PATCH /api/v1/emergencies/{emergency_id}/status` para cambiar estados reales
+  desde el panel administrador.
 
 El desktop no envía `status`; el backend asigna el estado inicial
 `pendiente`.
+
+En el listado de emergencias, los administradores pueden actualizar una
+emergencia real a `Pendiente`, `En revisión` o `Resuelto`. El estado `Atendido`
+permanece solo en el mock local y no se envía al backend hasta que exista en la
+API. La observación opcional viaja como `comment`, pero el backend actual no la
+persiste; queda reservada para una futura issue de historial.
 
 Mientras el login desktop siga usando usuarios mock, el controlador usa el
 `usuario.id` si existe. Si no existe, aplica un mapeo temporal contra los

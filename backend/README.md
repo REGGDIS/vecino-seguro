@@ -135,13 +135,48 @@ Body de ejemplo:
 
 Si la creación es correcta, responde `201 Created` con la emergencia creada, incluyendo `id`, `created_at` y `updated_at` generados por la base de datos.
 
+```text
+PATCH /api/v1/emergencies/{emergency_id}/status
+```
+
+Actualiza el estado real de una emergencia en MySQL/MariaDB y devuelve la
+emergencia actualizada con el mismo formato de `EmergencySummary`.
+
+Estados válidos:
+
+- `pendiente`
+- `en_revision`
+- `resuelto`
+
+Body de ejemplo:
+
+```json
+{
+  "status": "en_revision",
+  "comment": "Reporte revisado desde panel administrador."
+}
+```
+
+El campo `comment` es opcional. Actualmente viaja en el request pero no se
+persiste, porque la tabla `emergencies` no tiene columna de observaciones por
+cambio de estado. Queda reservado para una futura issue de historial de
+estados.
+
+Respuestas esperadas:
+
+- `200 OK`: estado actualizado.
+- `400 Bad Request`: estado inválido.
+- `404 Not Found`: emergencia inexistente.
+- `500 Internal Server Error`: error inesperado al actualizar.
+
 Para probar los endpoints desde Swagger:
 
 1. Ejecutar el backend con `uvicorn app.main.main:app --reload`.
 2. Abrir `http://127.0.0.1:8000/docs`.
 3. Probar `GET /api/v1/emergencies/catalogs`.
 4. Probar `POST /api/v1/emergencies/` con el body de ejemplo.
-5. Verificar que la nueva emergencia aparezca en `GET /api/v1/emergencies/`.
+5. Probar `PATCH /api/v1/emergencies/{emergency_id}/status` con un id existente.
+6. Verificar que la emergencia aparezca actualizada en `GET /api/v1/emergencies/`.
 
 ## Login real con RUT y contraseña
 

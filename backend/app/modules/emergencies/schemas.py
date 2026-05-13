@@ -31,6 +31,17 @@ class EmergencyCreate(BaseModel):
     urgency_level: str
 
 
+class EmergencyStatusUpdate(BaseModel):
+    """Datos para cambiar el estado de una emergencia.
+
+    ``comment`` queda reservado para una futura issue de historial de estados;
+    la tabla actual ``emergencies`` no persiste observaciones por cambio.
+    """
+
+    status: str
+    comment: str | None = None
+
+
 class EmergencySummary(BaseModel):
     """Resumen de una emergencia para listados y paneles.
 
