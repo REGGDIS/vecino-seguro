@@ -32,6 +32,17 @@ class ApiClient:
         response.raise_for_status()
         return response.json()
 
+    def get_system_info(self) -> dict | None:
+        """Obtiene información general del backend."""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/v1/system/info", timeout=10
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception:
+            return None
+
     def get_emergencies(self) -> list[dict] | None:
         """Obtiene la lista de emergencias del backend."""
         try:

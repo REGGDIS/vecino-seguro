@@ -277,6 +277,19 @@ class MainWindow(QMainWindow):
         """Consulta GET /health y actualiza el chip de estado."""
         try:
             ApiClient().health_check()
-            self._set_backend_chip_state(True)
+            online = True
         except Exception:
-            self._set_backend_chip_state(False)
+            online = False
+
+        self._set_backend_chip_state(online)
+
+        info = ApiClient().get_system_info()
+        if info:
+            self.lbl_chip.setToolTip(
+                f"Backend: {info.get('app_name', 'VecinoSeguro')}\n"
+                f"Versión: {info.get('version', 'N/D')}\n"
+                f"Ambiente: {info.get('environment', 'N/D')}\n"
+                f"Estado: {info.get('status', 'N/D')}"
+            )
+        else:
+            self.lbl_chip.setToolTip("Información del sistema no disponible")
