@@ -3,10 +3,12 @@ import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, Te
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PrimaryButton } from "../components/PrimaryButton";
+import { login } from "../services/apiClient";
 import { colors, radii, shadows, spacing } from "../styles/theme";
+import type { AuthenticatedUser } from "../types/auth";
 
 interface LoginScreenProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (user: AuthenticatedUser) => void;
 }
 
 export function isBasicRutFormat(rut: string) {
@@ -16,13 +18,17 @@ export function isBasicRutFormat(rut: string) {
   return rutPattern.test(trimmedRut);
 }
 
-// Login visual inicial. La autenticacion real se conectara al backend en otra iteracion.
 export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const [rut, setRut] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
     if (!rut.trim()) {
       setError("Ingresa tu RUT para continuar.");
       return;
@@ -39,7 +45,20 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     }
 
     setError("");
-    onLoginSuccess();
+    setIsSubmitting(true);
+
+    try {
+      const response = await login(rut, password);
+      onLoginSuccess(response.user);
+    } catch (loginError) {
+      setError(
+        loginError instanceof Error
+          ? loginError.message
+          : "No fue posible iniciar sesión. Inténtalo nuevamente.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -94,6 +113,10 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
                   onChangeText={setPassword}
                   placeholder="Ingresa tu contraseña"
                   placeholderTextColor={colors.textSecondary}
+                  onSubmitEditing={() => {
+                    void handleLogin();
+                  }}
+                  returnKeyType="done"
                   secureTextEntry
                   style={styles.input}
                   value={password}
@@ -102,7 +125,13 @@ export function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
 
-              <PrimaryButton label="Ingresar" onPress={handleLogin} />
+              <PrimaryButton
+                disabled={isSubmitting}
+                label={isSubmitting ? "Ingresando..." : "Ingresar"}
+                onPress={() => {
+                  void handleLogin();
+                }}
+              />
             </View>
           </View>
         </ScrollView>
