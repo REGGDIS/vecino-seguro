@@ -17,3 +17,17 @@ class ReportsSummaryResponse(BaseModel):
     total_emergencies: int
     by_status: dict[str, int]
     by_urgency: dict[str, int]
+
+
+class DashboardCard(BaseModel):
+    """Tarjeta simple para mostrar indicadores en dashboard."""
+
+    key: str
+    label: str
+    value: int
+
+
+class DashboardCardsResponse(BaseModel):
+    """Respuesta con tarjetas de indicadores para dashboard."""
+
+    cards: list[DashboardCard]
