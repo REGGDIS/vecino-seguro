@@ -241,8 +241,6 @@ class MainWindow(QMainWindow):
         self.form_view.set_usuario(usuario)
         self.list_view.set_usuario(usuario)
 
-        self.dashboard.refrescar()
-        self.list_view.refrescar()
         self.ir_a(self.PAG_DASH)
 
     def ir_a(self, indice: int) -> None:
