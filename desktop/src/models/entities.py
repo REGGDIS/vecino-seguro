@@ -78,6 +78,8 @@ class Usuario:
     rol: Rol
     password_hash: str
     direccion: str = ""
+    id: int | None = None
+    email: str = ""
 
     def __post_init__(self) -> None:
         self.normalizar_campos()

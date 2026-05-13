@@ -80,7 +80,7 @@ class LoginView(QWidget):
         izq_layout.addWidget(eslogan)
         izq_layout.addStretch()
 
-        pie = QLabel("Taller de Ingeniería de Software · 2026")
+        pie = QLabel("Sistema comunitario de seguridad y respuesta local · 2026")
         pie.setStyleSheet("color: #6B85A8; font-size: 11px;")
         pie.setAlignment(Qt.AlignCenter)
         izq_layout.addWidget(pie)
@@ -138,19 +138,6 @@ class LoginView(QWidget):
         der_layout.addWidget(btn)
         der_layout.addSpacing(24)
 
-        # Cuentas demo
-        demo_card = QFrame()
-        demo_card.setStyleSheet(
-            "background-color: #F4F8FB; border: 1px dashed #D9E2EC; border-radius: 8px;"
-        )
-        demo_layout = QVBoxLayout(demo_card)
-        demo_layout.setSpacing(4)
-        demo_layout.setContentsMargins(14, 12, 14, 12)
-        demo_layout.addWidget(self._mk_demo_titulo("Cuentas de prueba"))
-        demo_layout.addWidget(self._mk_demo_linea("Vecino:", "12.345.678-5", "Vecino123"))
-        demo_layout.addWidget(self._mk_demo_linea("Admin:", "11.111.111-1", "Admin123"))
-        der_layout.addWidget(demo_card)
-
         der_layout.addStretch()
 
         outer.addWidget(izquierda, 4)
@@ -160,24 +147,6 @@ class LoginView(QWidget):
     def _mk_field_label(self, texto: str) -> QLabel:
         l = QLabel(texto)
         l.setStyleSheet("color: #52616B; font-weight: 600; font-size: 12px;")
-        return l
-
-    def _mk_demo_titulo(self, texto: str) -> QLabel:
-        l = QLabel(texto)
-        l.setStyleSheet(
-            "color: #52616B; font-weight: 700; font-size: 11px; "
-            "text-transform: uppercase; letter-spacing: 0.8px; background: transparent;"
-        )
-        return l
-
-    def _mk_demo_linea(self, rol: str, rut: str, password: str) -> QLabel:
-        l = QLabel(
-            f"<span style='color:#005A9C; font-weight:600;'>{rol}</span> "
-            f"<span style='color:#102A43;'>{rut}</span> "
-            f"<span style='color:#52616B;'>·</span> "
-            f"<span style='color:#102A43;'>{password}</span>"
-        )
-        l.setStyleSheet("font-size: 12px; background: transparent;")
         return l
 
     # ---- eventos ----
