@@ -113,3 +113,35 @@ class EmergencyRepository:
                 cursor.close()
             connection.close()
 
+    def find_by_id(self, emergency_id: int) -> EmergencySummary | None:
+        """Retorna una emergencia por ID o None si no existe."""
+        query = """
+            SELECT
+                id,
+                user_id,
+                type,
+                description,
+                location,
+                urgency_level,
+                status,
+                created_at,
+                updated_at
+            FROM emergencies
+            WHERE id = %s
+            LIMIT 1
+        """
+
+        connection = get_connection()
+        cursor = None
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(query, (emergency_id,))
+            row = cursor.fetchone()
+            if row is None:
+                return None
+            return EmergencySummary(**row)
+        finally:
+            if cursor is not None:
+                cursor.close()
+            connection.close()
+

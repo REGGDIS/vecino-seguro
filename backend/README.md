@@ -143,6 +143,63 @@ Para probar los endpoints desde Swagger:
 4. Probar `POST /api/v1/emergencies/` con el body de ejemplo.
 5. Verificar que la nueva emergencia aparezca en `GET /api/v1/emergencies/`.
 
+## Detalle de emergencia
+
+Endpoint para consultar una emergencia específica por su ID:
+
+```text
+GET /api/v1/emergencies/{emergency_id}
+```
+
+### Ejemplo
+
+Para obtener la emergencia con ID 1:
+
+```text
+http://127.0.0.1:8000/api/v1/emergencies/1
+```
+
+### Respuesta exitosa (200 OK)
+
+Si la emergencia existe:
+
+```json
+{
+  "id": 1,
+  "user_id": 2,
+  "type": "Incendio",
+  "description": "Humo visible cerca de una vivienda. Vecinos reportan llamas en el techo.",
+  "location": "Pasaje Los Alerces 123, Villa El Bosque",
+  "urgency_level": "alta",
+  "status": "pendiente",
+  "created_at": "2026-05-04T14:00:00",
+  "updated_at": "2026-05-04T14:00:00"
+}
+```
+
+### Respuesta de error (404 Not Found)
+
+Si la emergencia no existe:
+
+```json
+{
+  "detail": "Emergencia no encontrada"
+}
+```
+
+### Prueba desde el navegador
+
+```text
+http://127.0.0.1:8000/api/v1/emergencies/1
+http://127.0.0.1:8000/api/v1/emergencies/9999
+```
+
+### Prueba desde PowerShell
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/emergencies/1
+```
+
 ## Login real con RUT y contraseña
 
 El backend autentica usuarios contra MySQL/MariaDB usando RUT chileno y contraseña bcrypt.

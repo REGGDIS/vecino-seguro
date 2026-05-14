@@ -70,6 +70,10 @@ class EmergencyService:
             status=INITIAL_STATUS,
         )
 
+    def get_emergency_by_id(self, emergency_id: int) -> EmergencySummary | None:
+        """Obtiene una emergencia específica por ID."""
+        return self.repository.find_by_id(emergency_id)
+
     def _validate_required_fields(self, emergency_data: EmergencyCreate) -> None:
         if emergency_data.user_id is None:
             raise EmergencyValidationError("El usuario es obligatorio")

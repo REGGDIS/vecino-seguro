@@ -44,6 +44,26 @@ def get_emergency_catalogs() -> EmergencyCatalogs:
     return emergency_service.get_catalogs()
 
 
+@router.get("/{emergency_id}", response_model=EmergencySummary)
+def get_emergency_by_id(emergency_id: int) -> EmergencySummary:
+    """Obtiene el detalle de una emergencia por ID."""
+    try:
+        emergency = emergency_service.get_emergency_by_id(emergency_id)
+        if emergency is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Emergencia no encontrada",
+            )
+        return emergency
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="No fue posible obtener la emergencia",
+        ) from exc
+
+
 @router.post(
     "/",
     response_model=EmergencySummary,
