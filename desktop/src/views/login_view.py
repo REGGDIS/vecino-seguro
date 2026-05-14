@@ -10,6 +10,7 @@ from pathlib import Path
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
+    QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -23,7 +24,8 @@ from src.controllers.auth_controller import AuthController
 from src.core.rut_validator import RutValidator
 from src.widgets.buttons import estilizar_boton
 
-ISOTIPO_PATH = Path(__file__).resolve().parents[1] / "assets" / "isotipo-vecino-seguro.png"
+ISOTIPO_PATH = Path(__file__).resolve(
+).parents[1] / "assets" / "isotipo-vecino-seguro.png"
 
 
 class LoginView(QWidget):
@@ -80,7 +82,8 @@ class LoginView(QWidget):
         izq_layout.addWidget(eslogan)
         izq_layout.addStretch()
 
-        pie = QLabel("Sistema comunitario de seguridad y respuesta local · 2026")
+        pie = QLabel(
+            "Sistema comunitario de seguridad y respuesta local · 2026")
         pie.setStyleSheet("color: #6B85A8; font-size: 11px;")
         pie.setAlignment(Qt.AlignCenter)
         izq_layout.addWidget(pie)
@@ -94,7 +97,8 @@ class LoginView(QWidget):
         der_layout.addStretch()
 
         titulo = QLabel("Iniciar sesión")
-        titulo.setStyleSheet("color: #073B6B; font-size: 28px; font-weight: 700;")
+        titulo.setStyleSheet(
+            "color: #073B6B; font-size: 28px; font-weight: 700;")
         der_layout.addWidget(titulo)
 
         subtitulo = QLabel("Ingresa con tu RUT y contraseña")
@@ -131,12 +135,12 @@ class LoginView(QWidget):
         der_layout.addWidget(self.lbl_error)
         der_layout.addSpacing(8)
 
-        btn = QPushButton("Ingresar")
-        estilizar_boton(btn, "primary")
-        btn.setMinimumHeight(44)
-        btn.setCursor(Qt.PointingHandCursor)
-        btn.clicked.connect(self._intentar_login)
-        der_layout.addWidget(btn)
+        self.btn_ingresar = QPushButton("Ingresar")
+        estilizar_boton(self.btn_ingresar, "primary")
+        self.btn_ingresar.setMinimumHeight(44)
+        self.btn_ingresar.setCursor(Qt.PointingHandCursor)
+        self.btn_ingresar.clicked.connect(self._intentar_login)
+        der_layout.addWidget(self.btn_ingresar)
         der_layout.addSpacing(24)
 
         der_layout.addStretch()
@@ -162,15 +166,33 @@ class LoginView(QWidget):
             self.lbl_rut_status.setText("")
             return
         if RutValidator.es_valido(texto):
-            self.lbl_rut_status.setStyleSheet("color: #16812C; font-size: 11px;")
+            self.lbl_rut_status.setStyleSheet(
+                "color: #16812C; font-size: 11px;")
             self.lbl_rut_status.setText("✓ RUT válido")
         else:
-            self.lbl_rut_status.setStyleSheet("color: #9CA3AF; font-size: 11px;")
+            self.lbl_rut_status.setStyleSheet(
+                "color: #9CA3AF; font-size: 11px;")
             self.lbl_rut_status.setText("Verificando dígito verificador…")
 
+    # ---- estado visual del botón ----
+    def _activar_estado_ingresando(self) -> None:
+        self.btn_ingresar.setText("Ingresando...")
+        self.btn_ingresar.setEnabled(False)
+
+    def _restaurar_boton_ingresar(self) -> None:
+        self.btn_ingresar.setText("Ingresar")
+        self.btn_ingresar.setEnabled(True)
+
     def _intentar_login(self) -> None:
+        if not self.btn_ingresar.isEnabled():
+            return
+
         rut = self.input_rut.text().strip()
         password = self.input_password.text()
+
+        self._activar_estado_ingresando()
+        QApplication.processEvents()
+
         resultado = self._auth.login_detallado(rut, password)
         if resultado.exito:
             self.lbl_error.setVisible(False)
@@ -179,3 +201,4 @@ class LoginView(QWidget):
         else:
             self.lbl_error.setText(resultado.mensaje)
             self.lbl_error.setVisible(True)
+            self._restaurar_boton_ingresar()
