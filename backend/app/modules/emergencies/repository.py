@@ -12,35 +12,6 @@ from app.modules.emergencies.schemas import EmergencyCreate, EmergencySummary
 class EmergencyRepository:
     """Consulta emergencias almacenadas en MySQL."""
 
-    def find_by_id(self, emergency_id: int) -> EmergencySummary | None:
-        """Busca una emergencia por id y retorna ``None`` si no existe."""
-        query = """
-            SELECT
-                id,
-                user_id,
-                type,
-                description,
-                location,
-                urgency_level,
-                status,
-                created_at,
-                updated_at
-            FROM emergencies
-            WHERE id = %s
-        """
-
-        connection = get_connection()
-        cursor = None
-        try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute(query, (emergency_id,))
-            row = cursor.fetchone()
-            return EmergencySummary(**row) if row is not None else None
-        finally:
-            if cursor is not None:
-                cursor.close()
-            connection.close()
-
     def list_emergencies(self) -> list[EmergencySummary]:
         """Retorna todas las emergencias ordenadas por fecha descendente.
 
