@@ -4,6 +4,7 @@ from app.modules.emergencies.repository import EmergencyRepository
 from app.modules.emergencies.schemas import (
     EmergencyCatalogs,
     EmergencyCreate,
+    EmergencyStatusUpdate,
     EmergencySummary,
 )
 
@@ -33,10 +34,15 @@ STATUSES = [
 ]
 
 INITIAL_STATUS = "pendiente"
+VALID_STATUSES = {option["value"] for option in STATUSES}
 
 
 class EmergencyValidationError(ValueError):
     """Error de validacion de reglas de negocio de emergencias."""
+
+
+class EmergencyNotFoundError(LookupError):
+    """Error cuando una emergencia solicitada no existe."""
 
 
 class EmergencyService:
@@ -73,6 +79,24 @@ class EmergencyService:
     def get_emergency_by_id(self, emergency_id: int) -> EmergencySummary | None:
         """Obtiene una emergencia específica por ID."""
         return self.repository.find_by_id(emergency_id)
+
+    def update_status(
+        self,
+        emergency_id: int,
+        status_data: EmergencyStatusUpdate,
+    ) -> EmergencySummary:
+        """Valida y persiste el nuevo estado de una emergencia."""
+        status = status_data.status.strip() if status_data.status else ""
+        if status not in VALID_STATUSES:
+            raise EmergencyValidationError(
+                "Estado no valido. Use: pendiente, en_revision o resuelto"
+            )
+
+        updated = self.repository.update_status(emergency_id, status)
+        if updated is None:
+            raise EmergencyNotFoundError("Emergencia no encontrada")
+
+        return updated
 
     def _validate_required_fields(self, emergency_data: EmergencyCreate) -> None:
         if emergency_data.user_id is None:

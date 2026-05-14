@@ -1,7 +1,11 @@
 """Servicio de reportes y estadísticas agregadas."""
 
 from app.modules.reports.repository import ReportRepository
-from app.modules.reports.schemas import ReportsSummaryResponse
+from app.modules.reports.schemas import (
+    DashboardCard,
+    DashboardCardsResponse,
+    ReportsSummaryResponse,
+)
 
 
 class ReportService:
@@ -35,4 +39,39 @@ class ReportService:
             total_emergencies=total_emergencies,
             by_status=normalized_status,
             by_urgency=normalized_urgency,
+        )
+
+    def get_dashboard_cards(self) -> DashboardCardsResponse:
+        """Retorna indicadores preparados como tarjetas para dashboard."""
+
+        summary = self.get_summary()
+
+        return DashboardCardsResponse(
+            cards=[
+                DashboardCard(
+                    key="total",
+                    label="Emergencias totales",
+                    value=summary.total_emergencies,
+                ),
+                DashboardCard(
+                    key="pendiente",
+                    label="Pendientes",
+                    value=summary.by_status.get("pendiente", 0),
+                ),
+                DashboardCard(
+                    key="en_revision",
+                    label="En revisión",
+                    value=summary.by_status.get("en_revision", 0),
+                ),
+                DashboardCard(
+                    key="resuelto",
+                    label="Resueltas",
+                    value=summary.by_status.get("resuelto", 0),
+                ),
+                DashboardCard(
+                    key="critica",
+                    label="Urgencia crítica",
+                    value=summary.by_urgency.get("critica", 0),
+                ),
+            ]
         )

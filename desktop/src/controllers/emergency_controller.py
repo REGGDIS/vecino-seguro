@@ -67,6 +67,12 @@ BACKEND_URGENCY_BY_ENUM = {
     NivelUrgencia.CRITICA: "critica",
 }
 
+BACKEND_STATUS_BY_ENUM = {
+    EstadoEmergencia.PENDIENTE: "pendiente",
+    EstadoEmergencia.EN_REVISION: "en_revision",
+    EstadoEmergencia.RESUELTO: "resuelto",
+}
+
 # Mapeo temporal para las cuentas mock del desktop contra seed.sql.
 PROTOTYPE_BACKEND_USER_ID_BY_RUT = {
     "11111111-1": 1,
@@ -322,6 +328,11 @@ class EmergencyController:
     def _backend_urgency(self, urgencia: NivelUrgencia) -> str:
         return BACKEND_URGENCY_BY_ENUM[urgencia]
 
+    def _backend_status(self, estado: EstadoEmergencia) -> str:
+        if estado not in BACKEND_STATUS_BY_ENUM:
+            raise ValueError(f"estado no soportado por backend: {estado.value}")
+        return BACKEND_STATUS_BY_ENUM[estado]
+
     def _backend_user_id(self, usuario: Usuario) -> int | None:
         user_id = getattr(usuario, "id", None)
         if isinstance(user_id, int) and user_id > 0:
@@ -336,20 +347,71 @@ class EmergencyController:
 
         return None
 
+    def _actualizar_cache(self, emergencia_actualizada: Emergencia) -> None:
+        for index, emergencia in enumerate(self._ultima_lista):
+            if emergencia.id == emergencia_actualizada.id:
+                self._ultima_lista[index] = emergencia_actualizada
+                return
+        self._ultima_lista.append(emergencia_actualizada)
+
+    def _mensaje_api_error(self, exc: ApiClientError) -> str:
+        if isinstance(exc.detail, str) and exc.detail:
+            return exc.detail
+        if exc.status_code == 404:
+            return "Emergencia no encontrada en el backend."
+        return exc.message
+
     def cambiar_estado(
         self,
         emergencia_id: int,
         nuevo_estado: EstadoEmergencia | str,
         observaciones: str = "",
     ) -> tuple[bool, str]:
+        if nuevo_estado is None:
+            return False, "Debe seleccionar un estado."
+
+        try:
+            estado_normalizado = normalizar_enum(
+                nuevo_estado, EstadoEmergencia, "estado"
+            )
+        except ValueError:
+            return False, "El estado seleccionado no es válido."
+
+        if self._api is not None:
+            if estado_normalizado == EstadoEmergencia.ATENDIDO:
+                return (
+                    False,
+                    'El estado "Atendido" aún no está disponible en el backend.',
+                )
+
+            try:
+                backend_status = self._backend_status(estado_normalizado)
+                payload = {"status": backend_status}
+                if observaciones:
+                    payload["comment"] = observaciones
+
+                actualizada = self._api.update_emergency_status(
+                    emergencia_id,
+                    payload,
+                )
+                emergencia = self._parsear_emergencia_backend(actualizada)
+                self._actualizar_cache(emergencia)
+                return True, f"Estado actualizado a '{estado_normalizado.value}'."
+            except ApiClientError as exc:
+                return False, self._mensaje_api_error(exc)
+            except Exception:
+                return (
+                    False,
+                    "El backend respondió, pero no se pudo interpretar "
+                    "la emergencia actualizada.",
+                )
+
         emergencia = self._repo.find_by_id(emergencia_id)
         if not emergencia:
             return False, "Emergencia no encontrada."
-        estado_normalizado = normalizar_enum(
-            nuevo_estado, EstadoEmergencia, "estado"
-        )
         emergencia.estado = estado_normalizado
         if observaciones:
             emergencia.observaciones = observaciones
         self._repo.save(emergencia)
+        self._actualizar_cache(emergencia)
         return True, f"Estado actualizado a '{estado_normalizado.value}'."

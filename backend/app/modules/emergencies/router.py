@@ -9,9 +9,11 @@ from fastapi import APIRouter, HTTPException, status
 from app.modules.emergencies.schemas import (
     EmergencyCatalogs,
     EmergencyCreate,
+    EmergencyStatusUpdate,
     EmergencySummary,
 )
 from app.modules.emergencies.service import (
+    EmergencyNotFoundError,
     EmergencyService,
     EmergencyValidationError,
 )
@@ -79,5 +81,24 @@ def create_emergency(emergency_data: EmergencyCreate) -> EmergencySummary:
         raise HTTPException(
             status_code=500,
             detail="No fue posible crear la emergencia",
+        ) from exc
+
+
+@router.patch("/{emergency_id}/status", response_model=EmergencySummary)
+def update_emergency_status(
+    emergency_id: int,
+    status_data: EmergencyStatusUpdate,
+) -> EmergencySummary:
+    """Actualiza el estado de una emergencia real en MySQL."""
+    try:
+        return emergency_service.update_status(emergency_id, status_data)
+    except EmergencyValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except EmergencyNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="No fue posible actualizar el estado de la emergencia",
         ) from exc
 

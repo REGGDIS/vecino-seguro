@@ -8,7 +8,7 @@ desacoplada del modelo de datos y del resto de la lógica de negocio.
 from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtSvgWidgets import QSvgWidget
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -23,7 +23,7 @@ from src.controllers.auth_controller import AuthController
 from src.core.rut_validator import RutValidator
 from src.widgets.buttons import estilizar_boton
 
-LOGO_PATH = str(Path(__file__).resolve().parents[1] / "assets" / "logo.svg")
+ISOTIPO_PATH = Path(__file__).resolve().parents[1] / "assets" / "isotipo-vecino-seguro.png"
 
 
 class LoginView(QWidget):
@@ -51,8 +51,19 @@ class LoginView(QWidget):
         izq_layout.setSpacing(20)
         izq_layout.addStretch()
 
-        logo = QSvgWidget(LOGO_PATH)
-        logo.setFixedSize(QSize(140, 140))
+        logo = QLabel()
+        logo_size = QSize(140, 140)
+        logo.setFixedSize(logo_size)
+        logo.setAlignment(Qt.AlignCenter)
+        pixmap = QPixmap(str(ISOTIPO_PATH))
+        if not pixmap.isNull():
+            logo.setPixmap(
+                pixmap.scaled(
+                    logo_size,
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation,
+                )
+            )
         logo.setStyleSheet("background: transparent;")
         izq_layout.addWidget(logo, alignment=Qt.AlignCenter)
 
@@ -69,7 +80,7 @@ class LoginView(QWidget):
         izq_layout.addWidget(eslogan)
         izq_layout.addStretch()
 
-        pie = QLabel("Taller de Ingeniería de Software · 2026")
+        pie = QLabel("Sistema comunitario de seguridad y respuesta local · 2026")
         pie.setStyleSheet("color: #6B85A8; font-size: 11px;")
         pie.setAlignment(Qt.AlignCenter)
         izq_layout.addWidget(pie)
@@ -123,22 +134,10 @@ class LoginView(QWidget):
         btn = QPushButton("Ingresar")
         estilizar_boton(btn, "primary")
         btn.setMinimumHeight(44)
+        btn.setCursor(Qt.PointingHandCursor)
         btn.clicked.connect(self._intentar_login)
         der_layout.addWidget(btn)
         der_layout.addSpacing(24)
-
-        # Cuentas demo
-        demo_card = QFrame()
-        demo_card.setStyleSheet(
-            "background-color: #F4F8FB; border: 1px dashed #D9E2EC; border-radius: 8px;"
-        )
-        demo_layout = QVBoxLayout(demo_card)
-        demo_layout.setSpacing(4)
-        demo_layout.setContentsMargins(14, 12, 14, 12)
-        demo_layout.addWidget(self._mk_demo_titulo("Cuentas de prueba"))
-        demo_layout.addWidget(self._mk_demo_linea("Vecino:", "12.345.678-5", "Vecino123"))
-        demo_layout.addWidget(self._mk_demo_linea("Admin:", "11.111.111-1", "Admin123"))
-        der_layout.addWidget(demo_card)
 
         der_layout.addStretch()
 
@@ -149,24 +148,6 @@ class LoginView(QWidget):
     def _mk_field_label(self, texto: str) -> QLabel:
         l = QLabel(texto)
         l.setStyleSheet("color: #52616B; font-weight: 600; font-size: 12px;")
-        return l
-
-    def _mk_demo_titulo(self, texto: str) -> QLabel:
-        l = QLabel(texto)
-        l.setStyleSheet(
-            "color: #52616B; font-weight: 700; font-size: 11px; "
-            "text-transform: uppercase; letter-spacing: 0.8px; background: transparent;"
-        )
-        return l
-
-    def _mk_demo_linea(self, rol: str, rut: str, password: str) -> QLabel:
-        l = QLabel(
-            f"<span style='color:#005A9C; font-weight:600;'>{rol}</span> "
-            f"<span style='color:#102A43;'>{rut}</span> "
-            f"<span style='color:#52616B;'>·</span> "
-            f"<span style='color:#102A43;'>{password}</span>"
-        )
-        l.setStyleSheet("font-size: 12px; background: transparent;")
         return l
 
     # ---- eventos ----

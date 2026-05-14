@@ -6,12 +6,14 @@ import { EmergencyCard } from "../components/EmergencyCard";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { getEmergencies } from "../services/emergencyService";
 import { colors, radii, shadows, spacing } from "../styles/theme";
+import type { AuthenticatedUser } from "../types/auth";
 import type { Emergency, EmergencyStatus } from "../types/emergency";
 
 interface HomeScreenProps {
   onLogout: () => void;
   onRegisterEmergency: () => void;
   onViewEmergencies: () => void;
+  user: AuthenticatedUser | null;
 }
 
 const summaryConfig: Array<{ label: string; status: EmergencyStatus; color: string }> = [
@@ -21,7 +23,9 @@ const summaryConfig: Array<{ label: string; status: EmergencyStatus; color: stri
   { color: colors.danger, label: "Críticas", status: "critical" },
 ];
 
-export function HomeScreen({ onLogout, onRegisterEmergency, onViewEmergencies }: HomeScreenProps) {
+const getRoleLabel = (roleId?: number) => (roleId === 1 ? "Administrador" : "Vecino");
+
+export function HomeScreen({ onLogout, onRegisterEmergency, onViewEmergencies, user }: HomeScreenProps) {
   const [emergencies, setEmergencies] = useState<Emergency[]>([]);
   const latestEmergencies = emergencies.slice(0, 3);
 
@@ -44,6 +48,11 @@ export function HomeScreen({ onLogout, onRegisterEmergency, onViewEmergencies }:
       subtitle="Bienvenido al panel comunitario. Revisa reportes recientes y registra nuevas alertas vecinales."
       title="VecinoSeguro"
     >
+      <View style={styles.sessionCard}>
+        <Text style={styles.sessionGreeting}>Hola, {user?.fullName ?? "vecino"}</Text>
+        <Text style={styles.sessionRole}>Sesión iniciada como {getRoleLabel(user?.roleId)}</Text>
+      </View>
+
       <View style={styles.actionRow}>
         <PrimaryButton label="Registrar emergencia" onPress={onRegisterEmergency} />
         <PrimaryButton label="Cerrar sesión" onPress={onLogout} variant="outline" />
@@ -102,6 +111,26 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 20,
     fontWeight: "800",
+  },
+  sessionCard: {
+    backgroundColor: colors.white,
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    gap: spacing.xs,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    ...shadows.card,
+  },
+  sessionGreeting: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  sessionRole: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: "600",
   },
   summaryCard: {
     backgroundColor: colors.white,

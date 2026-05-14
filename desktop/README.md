@@ -1,8 +1,8 @@
 # Aplicación desktop VecinoSeguro
 
-Mockup o prototipo frontend inicial de la aplicación de escritorio de
-**VecinoSeguro**, desarrollado con **Python + PySide6** según los
-requerimientos de la Issue #2.
+Aplicación de escritorio de **VecinoSeguro**, desarrollada con
+**Python + PySide6** e integrada con el backend FastAPI para autenticación
+y gestión de emergencias.
 
 > Responsable: **Franco Quezada** — Mockup desktop (PySide6).
 
@@ -24,7 +24,8 @@ python -m src.main.main
 La app lee `API_BASE_URL` desde variables de entorno. Si no se define,
 usa `http://localhost:8000`.
 
-Para crear emergencias reales, levanta primero el backend FastAPI:
+Para iniciar sesión y operar con datos reales, levanta primero el backend
+FastAPI:
 
 ```powershell
 cd D:\Trabajos2026\vecino-seguro\backend
@@ -41,18 +42,15 @@ cd desktop
 python -m src.main.main
 ```
 
-## Cuentas de prueba
-
-| Rol           | RUT             | Contraseña |
-|---------------|-----------------|------------|
-| Vecino        | 12.345.678-5    | Vecino123  |
-| Administrador | 11.111.111-1    | Admin123   |
-| Vecino        | 22.222.222-2    | Vecino123  |
-| Vecino        | 16.828.693-2    | Vecino123  |
+Para iniciar sesión en desktop, el backend FastAPI debe estar levantado y la
+base de datos debe contener usuarios con contraseñas válidas. En desarrollo,
+usa credenciales existentes en la base cargada con `database/seed.sql` o en los
+datos reales del entorno local.
 
 ## Pantallas implementadas
 
-- **Login** con validación de RUT (módulo 11) y mensajes de error claros.
+- **Login** conectado al backend real, con validación de RUT (módulo 11) y
+  mensajes de error claros.
 - **Dashboard** con KPIs por estado, accesos rápidos y reportes recientes.
 - **Formulario de registro de emergencia** con validaciones de negocio.
 - **Listado de emergencias** con filtro por estado y panel de detalle.
@@ -60,21 +58,32 @@ python -m src.main.main
 
 ## Integración con backend
 
+El login usa el flujo `Vista → AuthController → ApiClient → FastAPI` y consume:
+
+- `POST /api/v1/auth/login` para autenticar usuarios reales por RUT y
+  contraseña.
+
 El formulario de emergencias usa el flujo `Vista → EmergencyController →
 ApiClient → FastAPI` y consume:
 
 - `GET /api/v1/emergencies/catalogs` para cargar tipos y niveles válidos.
 - `POST /api/v1/emergencies/` para registrar emergencias reales.
 - `GET /api/v1/emergencies/` para refrescar dashboard y listado.
+- `PATCH /api/v1/emergencies/{emergency_id}/status` para cambiar estados reales
+  desde el panel administrador.
 
 El desktop no envía `status`; el backend asigna el estado inicial
 `pendiente`.
 
-Mientras el login desktop siga usando usuarios mock, el controlador usa el
-`usuario.id` si existe. Si no existe, aplica un mapeo temporal contra los
-usuarios de `database/seed.sql`: admin `11111111-1` → `1`, vecino
-`22222222-2` → `2`, vecino `13456789-9` → `3`. Otras cuentas vecinas mock
-usan temporalmente `user_id=2` para permitir la demo contra el backend.
+En el listado de emergencias, los administradores pueden actualizar una
+emergencia real a `Pendiente`, `En revisión` o `Resuelto`. El estado `Atendido`
+permanece solo en el mock local y no se envía al backend hasta que exista en la
+API. La observación opcional viaja como `comment`, pero el backend actual no la
+persiste; queda reservada para una futura issue de historial.
+
+Después de un login exitoso, el desktop construye un `Usuario` local con el
+`id`, `rut`, `full_name`, `email` y `role_id` retornados por el backend. El
+rol `role_id=1` se interpreta como administrador y `role_id=2` como vecino.
 
 ## Identidad visual
 
@@ -150,7 +159,5 @@ desktop/
 
 ## Próximos pasos
 
-- Conectar `AuthController` con el backend FastAPI para obtener el `user_id`
-  real de la sesión.
 - Agregar tabla de historial de cambios de estado (`emergency_status_history`).
 - Refinar componentes según feedback del equipo y la presentación del 19 de mayo.

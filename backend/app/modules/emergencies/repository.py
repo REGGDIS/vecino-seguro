@@ -12,6 +12,35 @@ from app.modules.emergencies.schemas import EmergencyCreate, EmergencySummary
 class EmergencyRepository:
     """Consulta emergencias almacenadas en MySQL."""
 
+    def find_by_id(self, emergency_id: int) -> EmergencySummary | None:
+        """Busca una emergencia por id y retorna ``None`` si no existe."""
+        query = """
+            SELECT
+                id,
+                user_id,
+                type,
+                description,
+                location,
+                urgency_level,
+                status,
+                created_at,
+                updated_at
+            FROM emergencies
+            WHERE id = %s
+        """
+
+        connection = get_connection()
+        cursor = None
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(query, (emergency_id,))
+            row = cursor.fetchone()
+            return EmergencySummary(**row) if row is not None else None
+        finally:
+            if cursor is not None:
+                cursor.close()
+            connection.close()
+
     def list_emergencies(self) -> list[EmergencySummary]:
         """Retorna todas las emergencias ordenadas por fecha descendente.
 
@@ -41,6 +70,50 @@ class EmergencyRepository:
             cursor.execute(query)
             rows = cursor.fetchall()
             return [EmergencySummary(**row) for row in rows]
+        finally:
+            if cursor is not None:
+                cursor.close()
+            connection.close()
+
+    def update_status(self, emergency_id: int, status: str) -> EmergencySummary | None:
+        """Actualiza estado y ``updated_at``; retorna la emergencia actualizada."""
+        update_query = """
+            UPDATE emergencies
+            SET status = %s,
+                updated_at = NOW()
+            WHERE id = %s
+        """
+        select_query = """
+            SELECT
+                id,
+                user_id,
+                type,
+                description,
+                location,
+                urgency_level,
+                status,
+                created_at,
+                updated_at
+            FROM emergencies
+            WHERE id = %s
+        """
+
+        connection = get_connection()
+        cursor = None
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(update_query, (status, emergency_id))
+            connection.commit()
+
+            cursor.execute(select_query, (emergency_id,))
+            row = cursor.fetchone()
+            return EmergencySummary(**row) if row is not None else None
+        except Exception:
+            try:
+                connection.rollback()
+            except Exception:
+                pass
+            raise
         finally:
             if cursor is not None:
                 cursor.close()
