@@ -131,12 +131,12 @@ class LoginView(QWidget):
         der_layout.addWidget(self.lbl_error)
         der_layout.addSpacing(8)
 
-        btn = QPushButton("Ingresar")
-        estilizar_boton(btn, "primary")
-        btn.setMinimumHeight(44)
-        btn.setCursor(Qt.PointingHandCursor)
-        btn.clicked.connect(self._intentar_login)
-        der_layout.addWidget(btn)
+        self.btn_ingresar = QPushButton("Ingresar")
+        estilizar_boton(self.btn_ingresar, "primary")
+        self.btn_ingresar.setMinimumHeight(44)
+        self.btn_ingresar.setCursor(Qt.PointingHandCursor)
+        self.btn_ingresar.clicked.connect(self._intentar_login)
+        der_layout.addWidget(self.btn_ingresar)
         der_layout.addSpacing(24)
 
         der_layout.addStretch()
@@ -168,9 +168,24 @@ class LoginView(QWidget):
             self.lbl_rut_status.setStyleSheet("color: #9CA3AF; font-size: 11px;")
             self.lbl_rut_status.setText("Verificando dígito verificador…")
 
+    # ---- estado visual del botón ----
+    def _activar_estado_ingresando(self) -> None:
+        self.btn_ingresar.setText("Ingresando...")
+        self.btn_ingresar.setEnabled(False)
+
+    def _restaurar_boton_ingresar(self) -> None:
+        self.btn_ingresar.setText("Ingresar")
+        self.btn_ingresar.setEnabled(True)
+
     def _intentar_login(self) -> None:
+        if not self.btn_ingresar.isEnabled():
+            return
+
         rut = self.input_rut.text().strip()
         password = self.input_password.text()
+
+        self._activar_estado_ingresando()
+
         resultado = self._auth.login_detallado(rut, password)
         if resultado.exito:
             self.lbl_error.setVisible(False)
@@ -179,3 +194,4 @@ class LoginView(QWidget):
         else:
             self.lbl_error.setText(resultado.mensaje)
             self.lbl_error.setVisible(True)
+            self._restaurar_boton_ingresar()
