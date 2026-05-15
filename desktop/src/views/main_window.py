@@ -32,6 +32,7 @@ from src.services.api_client import ApiClient
 from src.views.dashboard_view import DashboardView
 from src.views.emergency_form_view import EmergencyFormView
 from src.views.emergency_list_view import EmergencyListView
+from src.views.user_form_view import UserFormView
 
 LOGO_PATH = str(Path(__file__).resolve().parents[1] / "assets" / "logo.svg")
 
@@ -39,7 +40,7 @@ LOGO_PATH = str(Path(__file__).resolve().parents[1] / "assets" / "logo.svg")
 class MainWindow(QMainWindow):
     """Ventana principal posterior al login."""
 
-    PAG_DASH, PAG_FORM, PAG_LIST = 0, 1, 2
+    PAG_DASH, PAG_FORM, PAG_LIST, PAG_USERS = 0, 1, 2, 3
 
     def __init__(
         self,
@@ -116,6 +117,17 @@ class MainWindow(QMainWindow):
             sb.addWidget(b)
         sb.addSpacing(20)
 
+        self.admin_section = self._mk_sidebar_section("ADMINISTRACIÓN")
+        self.btn_users = self._mk_sidebar_btn(
+            "👥  Usuarios",
+            lambda: self.ir_a(self.PAG_USERS),
+        )
+        self.admin_section.setVisible(False)
+        self.btn_users.setVisible(False)
+        sb.addWidget(self.admin_section)
+        sb.addWidget(self.btn_users)
+        sb.addSpacing(20)
+
         sb.addWidget(self._mk_sidebar_section("CUENTA"))
         user_wrapper = QHBoxLayout()
         user_wrapper.setContentsMargins(16, 4, 16, 4)
@@ -182,9 +194,11 @@ class MainWindow(QMainWindow):
         self.dashboard = DashboardView(self._emergency)
         self.form_view = EmergencyFormView(self._emergency)
         self.list_view = EmergencyListView(self._emergency)
+        self.user_form_view = UserFormView()
         self.stack.addWidget(self.dashboard)   # 0
         self.stack.addWidget(self.form_view)   # 1
         self.stack.addWidget(self.list_view)   # 2
+        self.stack.addWidget(self.user_form_view)  # 3
         ca.addWidget(self.stack)
 
         # Conexiones entre vistas
@@ -241,11 +255,18 @@ class MainWindow(QMainWindow):
         self.form_view.set_usuario(usuario)
         self.list_view.set_usuario(usuario)
 
+        is_admin = usuario.rol == Rol.ADMIN
+        self.admin_section.setVisible(is_admin)
+        self.btn_users.setVisible(is_admin)
+
         self.ir_a(self.PAG_DASH)
 
     def ir_a(self, indice: int) -> None:
+        if indice == self.PAG_USERS and not self._es_admin():
+            indice = self.PAG_DASH
+
         self.stack.setCurrentIndex(indice)
-        for b in (self.btn_dash, self.btn_form, self.btn_list):
+        for b in (self.btn_dash, self.btn_form, self.btn_list, self.btn_users):
             b.setChecked(False)
         if indice == self.PAG_DASH:
             self.btn_dash.setChecked(True)
@@ -258,10 +279,16 @@ class MainWindow(QMainWindow):
             self.btn_list.setChecked(True)
             self.lbl_titulo_pagina.setText("Reportes de emergencia")
             self.list_view.refrescar()
+        elif indice == self.PAG_USERS:
+            self.btn_users.setChecked(True)
+            self.lbl_titulo_pagina.setText("Registrar usuario")
 
     def _cerrar_sesion(self) -> None:
         self._auth.logout()
         self._on_logout()
+
+    def _es_admin(self) -> bool:
+        return self._usuario is not None and self._usuario.rol == Rol.ADMIN
 
     def _set_backend_chip_state(self, online: bool) -> None:
         self.lbl_chip.setText("● En línea" if online else "● Sin conexión")

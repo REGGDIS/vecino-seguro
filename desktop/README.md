@@ -55,6 +55,7 @@ datos reales del entorno local.
 - **Formulario de registro de emergencia** con validaciones de negocio.
 - **Listado de emergencias** con filtro por estado y panel de detalle.
 - **Detalle del reporte** con cambio de estado disponible solo para administradores.
+- **Registro básico de usuarios** visible solo para administradores.
 
 ## Integración con backend
 
@@ -72,6 +73,12 @@ ApiClient → FastAPI` y consume:
 - `PATCH /api/v1/emergencies/{emergency_id}/status` para cambiar estados reales
   desde el panel administrador.
 
+El formulario de usuarios usa el flujo `Vista → UserController → ApiClient →
+FastAPI` y consume:
+
+- `POST /api/v1/users/` para registrar usuarios reales con RUT, nombre, email,
+  contraseña inicial y rol.
+
 El desktop no envía `status`; el backend asigna el estado inicial
 `pendiente`.
 
@@ -84,6 +91,36 @@ persiste; queda reservada para una futura issue de historial.
 Después de un login exitoso, el desktop construye un `Usuario` local con el
 `id`, `rut`, `full_name`, `email` y `role_id` retornados por el backend. El
 rol `role_id=1` se interpreta como administrador y `role_id=2` como vecino.
+
+Los administradores ven el acceso lateral **Usuarios** y pueden crear cuentas
+con rol **Vecino** (`role_id=2`) o **Administrador** (`role_id=1`). Los vecinos
+no ven ese acceso en la navegación normal. La contraseña inicial no se muestra
+ni se guarda en desktop; el backend la persiste como hash bcrypt.
+
+Respuesta segura esperada desde `POST /api/v1/users/`:
+
+```json
+{
+  "id": 4,
+  "rut": "12345678-5",
+  "full_name": "Nuevo Vecino",
+  "email": "nuevo.vecino@vecinoseguro.cl",
+  "role_id": 2
+}
+```
+
+Códigos esperados: `201`, `400`, `409` y `500`.
+
+Limitación temporal: el backend aún no implementa autorización con token para
+este endpoint. En esta etapa el control de acceso se aplica desde desktop,
+mostrando el formulario solo a administradores.
+
+Credenciales de administrador para prueba local:
+
+```text
+RUT: 11.111.111-1
+Contraseña: admin1234
+```
 
 ## Identidad visual
 
@@ -138,12 +175,14 @@ desktop/
     │   └── api_client.py                 # Cliente HTTP para FastAPI
     ├── controllers/
     │   ├── auth_controller.py            # Coordina login y sesión
-    │   └── emergency_controller.py       # Lógica de negocio de reportes
+    │   ├── emergency_controller.py       # Lógica de negocio de reportes
+    │   └── user_controller.py            # Lógica de alta básica de usuarios
     └── views/
         ├── login_view.py
         ├── dashboard_view.py
         ├── emergency_form_view.py
         ├── emergency_list_view.py
+        ├── user_form_view.py
         └── main_window.py                # Shell con sidebar y stack
 ```
 
