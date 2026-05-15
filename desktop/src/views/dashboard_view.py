@@ -370,8 +370,8 @@ class DashboardView(QWidget):
     def refrescar(self) -> None:
         self.lbl_error_backend.setVisible(False)
 
-        emergencias = self._controller.listar()
-        stats = self._controller.estadisticas(emergencias)
+        stats = self._controller.resumen_dashboard()
+        recientes = self._controller.emergencias_recientes(limit=4)
 
         self.kpi_pendientes[1].setText(str(stats[EstadoEmergencia.PENDIENTE]))
         self.kpi_revision[1].setText(str(stats[EstadoEmergencia.EN_REVISION]))
@@ -383,8 +383,6 @@ class DashboardView(QWidget):
             item = self.recientes_box.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-
-        recientes = emergencias[:4]
 
         if self._controller.backend_error:
             self.lbl_error_backend.setText(f"⚠️ {self._controller.backend_error}")

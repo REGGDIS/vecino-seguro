@@ -69,9 +69,19 @@ ApiClient → FastAPI` y consume:
 
 - `GET /api/v1/emergencies/catalogs` para cargar tipos y niveles válidos.
 - `POST /api/v1/emergencies/` para registrar emergencias reales.
-- `GET /api/v1/emergencies/` para refrescar dashboard y listado.
 - `PATCH /api/v1/emergencies/{emergency_id}/status` para cambiar estados reales
   desde el panel administrador.
+
+El dashboard consume endpoints optimizados para no descargar el listado completo
+al cargar KPIs y reportes recientes:
+
+- `GET /api/v1/emergencies/summary` para los contadores por estado.
+- `GET /api/v1/emergencies/recent?limit=4` para la sección de reportes
+  recientes.
+
+El listado general de emergencias sigue usando:
+
+- `GET /api/v1/emergencies/`
 
 El formulario de usuarios usa el flujo `Vista → UserController → ApiClient →
 FastAPI` y consume:

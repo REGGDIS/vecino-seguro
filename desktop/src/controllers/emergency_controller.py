@@ -49,6 +49,13 @@ STATUS_OPTIONS = [
     {"value": "resuelto", "label": "Resuelto"},
 ]
 
+DASHBOARD_STATUS_KEYS = {
+    EstadoEmergencia.PENDIENTE: "pendiente",
+    EstadoEmergencia.EN_REVISION: "en_revision",
+    EstadoEmergencia.ATENDIDO: "atendido",
+    EstadoEmergencia.RESUELTO: "resuelto",
+}
+
 BACKEND_TYPE_BY_ENUM = {
     TipoEmergencia.ROBO: "robo",
     TipoEmergencia.INCENDIO: "incendio",
@@ -232,6 +239,79 @@ class EmergencyController:
                 1 for e in datos if e.estado == EstadoEmergencia.RESUELTO
             ),
         }
+
+    def resumen_dashboard(self) -> dict[EstadoEmergencia, int]:
+        """Obtiene contadores optimizados para el dashboard con fallback seguro."""
+        self.backend_error = None
+        if self._api is not None:
+            datos = self._api.get_emergencies_summary()
+            if isinstance(datos, dict):
+                try:
+                    return self._parsear_resumen_dashboard(datos)
+                except (TypeError, ValueError):
+                    self.backend_error = (
+                        "El backend respondió, pero no se pudo interpretar "
+                        "el resumen de emergencias."
+                    )
+            else:
+                self.backend_error = (
+                    "No se pudo obtener el resumen optimizado del dashboard. "
+                    "Se usará el listado completo como respaldo."
+                )
+
+        error_resumen = self.backend_error
+        emergencias = self.listar()
+        if error_resumen and not self.backend_error:
+            self.backend_error = error_resumen
+        return self.estadisticas(emergencias)
+
+    def emergencias_recientes(self, limit: int = 4) -> list[Emergencia]:
+        """Obtiene reportes recientes optimizados para el dashboard."""
+        safe_limit = max(1, min(limit, 20))
+        if self._api is not None:
+            datos = self._api.get_recent_emergencies(safe_limit)
+            if datos is not None:
+                emergencias = self._parsear_emergencias(datos)
+                if emergencias or datos == []:
+                    self._actualizar_cache_recientes(emergencias)
+                    return emergencias
+
+                self.backend_error = (
+                    "El backend respondió, pero no se pudieron interpretar "
+                    "las emergencias recientes."
+                )
+            elif not self.backend_error:
+                self.backend_error = (
+                    "No se pudieron obtener las emergencias recientes. "
+                    "Se usará el listado completo como respaldo."
+                )
+
+        if self._ultima_lista:
+            return self._ultima_lista[:safe_limit]
+
+        error_recientes = self.backend_error
+        emergencias = self.listar()
+        if error_recientes and not self.backend_error:
+            self.backend_error = error_recientes
+        return emergencias[:safe_limit]
+
+    def _parsear_resumen_dashboard(
+        self,
+        datos: dict,
+    ) -> dict[EstadoEmergencia, int]:
+        stats = {estado: 0 for estado in DASHBOARD_STATUS_KEYS}
+        for estado, key in DASHBOARD_STATUS_KEYS.items():
+            stats[estado] = int(datos.get(key, 0) or 0)
+        return stats
+
+    def _actualizar_cache_recientes(self, emergencias: list[Emergencia]) -> None:
+        ids_recientes = {emergencia.id for emergencia in emergencias}
+        anteriores = [
+            emergencia
+            for emergencia in self._ultima_lista
+            if emergencia.id not in ids_recientes
+        ]
+        self._ultima_lista = emergencias + anteriores
 
     def registrar(
         self,

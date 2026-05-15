@@ -50,6 +50,23 @@ class ApiClient:
         except ApiClientError:
             return None
 
+    def get_emergencies_summary(self) -> dict | None:
+        """Obtiene contadores agregados para el dashboard."""
+        try:
+            return self._request_json("GET", "/api/v1/emergencies/summary")
+        except ApiClientError:
+            return None
+
+    def get_recent_emergencies(self, limit: int = 4) -> list[dict] | None:
+        """Obtiene emergencias recientes para el dashboard."""
+        try:
+            return self._request_json(
+                "GET",
+                f"/api/v1/emergencies/recent?limit={limit}",
+            )
+        except ApiClientError:
+            return None
+
     def get_emergency_catalogs(self) -> dict:
         """Obtiene los catalogos validos para registrar emergencias."""
         return self._request_json("GET", "/api/v1/emergencies/catalogs")

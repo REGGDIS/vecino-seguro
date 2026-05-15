@@ -150,6 +150,8 @@ GET /api/v1/system/info
 POST /api/v1/auth/login
 POST /api/v1/users/
 GET /api/v1/emergencies/
+GET /api/v1/emergencies/summary
+GET /api/v1/emergencies/recent?limit=4
 GET /api/v1/emergencies/catalogs
 GET /api/v1/emergencies/{emergency_id}
 POST /api/v1/emergencies/
@@ -325,6 +327,62 @@ Ejemplo:
     "status": "pendiente",
     "created_at": "2026-05-04T00:00:00",
     "updated_at": "2026-05-04T00:00:00"
+  }
+]
+```
+
+---
+
+## Resumen optimizado para dashboard
+
+```text
+GET /api/v1/emergencies/summary
+```
+
+Devuelve contadores por estado sin transferir todo el listado de emergencias.
+Este endpoint optimiza la carga de KPIs del dashboard desktop.
+
+Ejemplo:
+
+```json
+{
+  "pendiente": 2,
+  "en_revision": 1,
+  "atendido": 0,
+  "resuelto": 3
+}
+```
+
+Nota: `atendido` se devuelve en `0` por compatibilidad con el dashboard
+desktop; el backend actual no lo maneja como estado válido.
+
+---
+
+## Emergencias recientes para dashboard
+
+```text
+GET /api/v1/emergencies/recent?limit=4
+```
+
+Devuelve las emergencias más recientes, ordenadas por fecha de creación
+descendente, sin consultar todo el historial. Este endpoint optimiza la sección
+de reportes recientes del dashboard desktop. El parámetro `limit` se acota entre
+`1` y `20`.
+
+Ejemplo:
+
+```json
+[
+  {
+    "id": 4,
+    "user_id": 2,
+    "type": "incendio",
+    "description": "Humo visible en una vivienda cercana",
+    "location": "Pasaje Los Aromos 123",
+    "urgency_level": "alta",
+    "status": "pendiente",
+    "created_at": "2026-05-04T14:00:00",
+    "updated_at": null
   }
 ]
 ```
@@ -510,10 +568,12 @@ Ejemplo de respuesta:
 6. Probar errores de RUT inválido, RUT duplicado, email duplicado y contraseña corta.
 7. Confirmar que la respuesta de usuarios no incluya `password_hash`.
 8. Probar `GET /api/v1/emergencies/`.
-9. Probar `GET /api/v1/emergencies/catalogs`.
-10. Probar `GET /api/v1/reports/summary`.
-11. Probar `GET /api/v1/reports/dashboard-cards`.
-12. Verificar que las respuestas sean coherentes con los datos cargados desde `database/seed.sql`.
+9. Probar `GET /api/v1/emergencies/summary`.
+10. Probar `GET /api/v1/emergencies/recent?limit=4`.
+11. Probar `GET /api/v1/emergencies/catalogs`.
+12. Probar `GET /api/v1/reports/summary`.
+13. Probar `GET /api/v1/reports/dashboard-cards`.
+14. Verificar que las respuestas sean coherentes con los datos cargados desde `database/seed.sql`.
 
 ---
 
