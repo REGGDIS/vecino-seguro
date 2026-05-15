@@ -1,5 +1,6 @@
 import { environment } from "../config/environment";
 import type { AuthenticatedUser, LoginResponse } from "../types/auth";
+import type { BackendEmergency } from "../types/emergency";
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 
@@ -38,6 +39,8 @@ interface BackendLoginResponse {
 
 const loginNetworkErrorMessage =
   "No fue posible conectar con el backend. Verifica que FastAPI esté en ejecución y que la URL de API sea correcta.";
+const emergenciesNetworkErrorMessage =
+  "No fue posible cargar las emergencias. Verifica que el backend esté disponible y que la URL de API sea correcta.";
 
 function normalizeRutForLogin(rut: string) {
   return rut.trim().replace(/\./g, "").toUpperCase();
@@ -89,6 +92,26 @@ function isBackendLoginResponse(data: unknown): data is BackendLoginResponse {
   );
 }
 
+function isBackendEmergency(data: unknown): data is BackendEmergency {
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+
+  const emergency = data as Partial<BackendEmergency>;
+
+  return (
+    typeof emergency.id === "number" &&
+    typeof emergency.user_id === "number" &&
+    typeof emergency.type === "string" &&
+    typeof emergency.description === "string" &&
+    typeof emergency.location === "string" &&
+    typeof emergency.urgency_level === "string" &&
+    typeof emergency.status === "string" &&
+    typeof emergency.created_at === "string" &&
+    (typeof emergency.updated_at === "string" || emergency.updated_at === null)
+  );
+}
+
 export async function login(rut: string, password: string): Promise<LoginResponse> {
   let response: Response;
 
@@ -128,4 +151,32 @@ export async function login(rut: string, password: string): Promise<LoginRespons
     success: data.success,
     user: mapAuthenticatedUser(data.user),
   };
+}
+
+export async function getBackendEmergencies(): Promise<BackendEmergency[]> {
+  let response: Response;
+
+  try {
+    response = await fetch(buildApiUrl("/api/v1/emergencies/"));
+  } catch {
+    throw new Error(emergenciesNetworkErrorMessage);
+  }
+
+  if (!response.ok) {
+    throw new Error("No fue posible cargar las emergencias desde el backend.");
+  }
+
+  let data: unknown;
+
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("El backend devolvió una respuesta de emergencias inválida.");
+  }
+
+  if (!Array.isArray(data) || !data.every(isBackendEmergency)) {
+    throw new Error("El backend devolvió una respuesta de emergencias inválida.");
+  }
+
+  return data;
 }
