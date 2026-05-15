@@ -7,7 +7,7 @@ listado de reportes. Coordina la sesión a través del `AuthController`.
 
 from pathlib import Path
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
     QFrame,
@@ -210,10 +210,9 @@ class MainWindow(QMainWindow):
         )
         self.list_view.cambio_realizado.connect(self.dashboard.refrescar)
 
-        self._actualizar_estado_backend()
-
         root.addWidget(self.sidebar)
         root.addWidget(self.content_area, 1)
+        QTimer.singleShot(100, self._actualizar_estado_backend)
 
     def _mk_sidebar_section(self, texto: str) -> QLabel:
         l = QLabel(texto)
@@ -284,8 +283,13 @@ class MainWindow(QMainWindow):
             self.lbl_titulo_pagina.setText("Registrar usuario")
 
     def _cerrar_sesion(self) -> None:
+        self.dashboard.detener_carga()
         self._auth.logout()
         self._on_logout()
+
+    def closeEvent(self, event) -> None:
+        self.dashboard.detener_carga()
+        super().closeEvent(event)
 
     def _es_admin(self) -> bool:
         return self._usuario is not None and self._usuario.rol == Rol.ADMIN

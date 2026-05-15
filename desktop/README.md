@@ -79,6 +79,11 @@ al cargar KPIs y reportes recientes:
 - `GET /api/v1/emergencies/recent?limit=4` para la sección de reportes
   recientes.
 
+La vista del dashboard inicia esa carga en segundo plano con `QThread` y un
+worker de datos. Primero muestra la interfaz con un estado temporal de carga y
+luego actualiza KPIs, reportes recientes y mensajes de error desde el hilo
+principal de PySide6.
+
 El listado general de emergencias sigue usando:
 
 - `GET /api/v1/emergencies/`
