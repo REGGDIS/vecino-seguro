@@ -6,6 +6,7 @@ from app.modules.emergencies.schemas import (
     EmergencyCreate,
     EmergencyStatusUpdate,
     EmergencySummary,
+    EmergencySummaryStats,
 )
 
 
@@ -54,6 +55,15 @@ class EmergencyService:
     def list_emergencies(self) -> list[EmergencySummary]:
         """Retorna emergencias desde el repositorio cuando exista persistencia."""
         return self.repository.list_emergencies()
+
+    def get_summary(self) -> EmergencySummaryStats:
+        """Retorna contadores agregados por estado."""
+        return self.repository.get_summary()
+
+    def list_recent(self, limit: int = 4) -> list[EmergencySummary]:
+        """Retorna emergencias recientes con un limite acotado."""
+        safe_limit = max(1, min(limit, 20))
+        return self.repository.list_recent(safe_limit)
 
     def get_catalogs(self) -> EmergencyCatalogs:
         """Retorna catalogos fijos sin consultar la base de datos."""

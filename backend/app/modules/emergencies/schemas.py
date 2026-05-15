@@ -42,6 +42,15 @@ class EmergencyStatusUpdate(BaseModel):
     comment: str | None = None
 
 
+class EmergencySummaryStats(BaseModel):
+    """Contadores agregados para el dashboard desktop."""
+
+    pendiente: int
+    en_revision: int
+    atendido: int = 0
+    resuelto: int
+
+
 class EmergencySummary(BaseModel):
     """Resumen de una emergencia para listados y paneles.
 

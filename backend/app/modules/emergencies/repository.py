@@ -6,7 +6,11 @@ cuenta: deben hacerlo siempre a través de este repositorio.
 """
 
 from app.db.connection import get_connection
-from app.modules.emergencies.schemas import EmergencyCreate, EmergencySummary
+from app.modules.emergencies.schemas import (
+    EmergencyCreate,
+    EmergencySummary,
+    EmergencySummaryStats,
+)
 
 
 class EmergencyRepository:
@@ -39,6 +43,66 @@ class EmergencyRepository:
         try:
             cursor = connection.cursor(dictionary=True)
             cursor.execute(query)
+            rows = cursor.fetchall()
+            return [EmergencySummary(**row) for row in rows]
+        finally:
+            if cursor is not None:
+                cursor.close()
+            connection.close()
+
+    def get_summary(self) -> EmergencySummaryStats:
+        """Cuenta emergencias por estado para el dashboard."""
+        query = """
+            SELECT status, COUNT(*) AS total
+            FROM emergencies
+            GROUP BY status
+        """
+        counts = {
+            "pendiente": 0,
+            "en_revision": 0,
+            "atendido": 0,
+            "resuelto": 0,
+        }
+
+        connection = get_connection()
+        cursor = None
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            for row in rows:
+                status = row.get("status")
+                if status in counts:
+                    counts[status] = int(row.get("total") or 0)
+            return EmergencySummaryStats(**counts)
+        finally:
+            if cursor is not None:
+                cursor.close()
+            connection.close()
+
+    def list_recent(self, limit: int = 4) -> list[EmergencySummary]:
+        """Retorna las emergencias recientes ordenadas por fecha descendente."""
+        query = """
+            SELECT
+                id,
+                user_id,
+                type,
+                description,
+                location,
+                urgency_level,
+                status,
+                created_at,
+                updated_at
+            FROM emergencies
+            ORDER BY created_at DESC
+            LIMIT %s
+        """
+
+        connection = get_connection()
+        cursor = None
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(query, (limit,))
             rows = cursor.fetchall()
             return [EmergencySummary(**row) for row in rows]
         finally:

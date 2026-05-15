@@ -11,6 +11,7 @@ from app.modules.emergencies.schemas import (
     EmergencyCreate,
     EmergencyStatusUpdate,
     EmergencySummary,
+    EmergencySummaryStats,
 )
 from app.modules.emergencies.service import (
     EmergencyNotFoundError,
@@ -37,6 +38,30 @@ def list_emergencies() -> list[EmergencySummary]:
         raise HTTPException(
             status_code=500,
             detail="No fue posible obtener las emergencias",
+        ) from exc
+
+
+@router.get("/summary", response_model=EmergencySummaryStats)
+def get_emergencies_summary() -> EmergencySummaryStats:
+    """Entrega contadores por estado para el dashboard."""
+    try:
+        return emergency_service.get_summary()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="No fue posible obtener el resumen de emergencias",
+        ) from exc
+
+
+@router.get("/recent", response_model=list[EmergencySummary])
+def get_recent_emergencies(limit: int = 4) -> list[EmergencySummary]:
+    """Lista emergencias recientes sin consultar todo el historial."""
+    try:
+        return emergency_service.list_recent(limit)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="No fue posible obtener las emergencias recientes",
         ) from exc
 
 
