@@ -5,7 +5,7 @@ rápidos a las acciones más usadas y los reportes más recientes. Toda la
 información se obtiene a través del `EmergencyController`.
 """
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QObject, Qt, QThread, Signal, Slot
 from PySide6.QtWidgets import (
     QFrame,
     QGridLayout,
@@ -21,6 +21,30 @@ from src.models.entities import EstadoEmergencia, Usuario
 from src.widgets.badges import crear_badge_estado
 
 
+class DashboardDataWorker(QObject):
+    """Carga datos del dashboard fuera del hilo principal de PySide6."""
+
+    finished = Signal(object, object, object)
+    failed = Signal(str)
+    completed = Signal()
+
+    def __init__(self, controller: EmergencyController) -> None:
+        super().__init__()
+        self._controller = controller
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            stats = self._controller.resumen_dashboard()
+            recientes = self._controller.emergencias_recientes(limit=4)
+            backend_error = self._controller.backend_error
+            self.finished.emit(stats, recientes, backend_error)
+        except Exception as exc:
+            self.failed.emit(str(exc))
+        finally:
+            self.completed.emit()
+
+
 class DashboardView(QWidget):
     """Panel principal con estadísticas y atajos."""
 
@@ -32,6 +56,9 @@ class DashboardView(QWidget):
         self.setWindowTitle("VecinoSeguro · Panel")
         self._controller = emergency_controller
         self._usuario: Usuario | None = None
+        self._cargando_dashboard = False
+        self._dashboard_thread: QThread | None = None
+        self._dashboard_worker: DashboardDataWorker | None = None
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -285,6 +312,41 @@ class DashboardView(QWidget):
 
         return card
 
+    def _mk_loading_recent_reports(self) -> QFrame:
+        """Construye el bloque visual para la carga de reportes recientes."""
+        card = QFrame()
+        card.setObjectName("loadingRecentReports")
+        card.setMinimumHeight(96)
+        card.setStyleSheet(
+            "QFrame#loadingRecentReports {"
+            "background-color: #FFFFFF;"
+            "border: 1px solid #D9E2EC;"
+            "border-radius: 10px;"
+            "}"
+        )
+
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(24, 20, 24, 20)
+        layout.setSpacing(6)
+
+        titulo = QLabel("Cargando información...")
+        titulo.setAlignment(Qt.AlignCenter)
+        titulo.setStyleSheet(
+            "font-size: 14px; font-weight: 700; color: #102A43;"
+            "background: transparent; border: none;"
+        )
+        layout.addWidget(titulo)
+
+        descripcion = QLabel("Actualizando KPIs y reportes recientes.")
+        descripcion.setAlignment(Qt.AlignCenter)
+        descripcion.setStyleSheet(
+            "font-size: 12px; color: #52616B;"
+            "background: transparent; border: none;"
+        )
+        layout.addWidget(descripcion)
+
+        return card
+
     def _mk_reciente_row(self, emergencia) -> QFrame:
         f = QFrame()
         f.setObjectName("recentRow")
@@ -368,25 +430,60 @@ class DashboardView(QWidget):
         self.lbl_subtitulo.setText(f"Sesión iniciada como {rol_texto}")
 
     def refrescar(self) -> None:
+        if self._cargando_dashboard:
+            return
+
+        self._cargando_dashboard = True
+        self._mostrar_carga_dashboard()
+
+        thread = QThread(self)
+        worker = DashboardDataWorker(self._controller)
+        worker.moveToThread(thread)
+
+        thread.started.connect(worker.run)
+        worker.finished.connect(self._aplicar_datos_dashboard)
+        worker.failed.connect(self._mostrar_error_carga_dashboard)
+        worker.completed.connect(thread.quit)
+        worker.completed.connect(worker.deleteLater)
+        thread.finished.connect(self._finalizar_carga_dashboard)
+
+        self._dashboard_thread = thread
+        self._dashboard_worker = worker
+        thread.start()
+
+    def _mostrar_carga_dashboard(self) -> None:
         self.lbl_error_backend.setVisible(False)
+        self.kpi_pendientes[1].setText("0")
+        self.kpi_revision[1].setText("0")
+        self.kpi_atendidos[1].setText("0")
+        self.kpi_resueltos[1].setText("0")
+        self._limpiar_reportes_recientes()
+        self.recientes_box.addWidget(self._mk_loading_recent_reports())
 
-        stats = self._controller.resumen_dashboard()
-        recientes = self._controller.emergencias_recientes(limit=4)
+    def _aplicar_datos_dashboard(
+        self,
+        stats: object,
+        recientes: object,
+        backend_error: object,
+    ) -> None:
+        stats = stats if isinstance(stats, dict) else {}
+        recientes = recientes if isinstance(recientes, list) else []
+        self.kpi_pendientes[1].setText(
+            str(stats.get(EstadoEmergencia.PENDIENTE, 0))
+        )
+        self.kpi_revision[1].setText(
+            str(stats.get(EstadoEmergencia.EN_REVISION, 0))
+        )
+        self.kpi_atendidos[1].setText(str(stats.get(EstadoEmergencia.ATENDIDO, 0)))
+        self.kpi_resueltos[1].setText(str(stats.get(EstadoEmergencia.RESUELTO, 0)))
 
-        self.kpi_pendientes[1].setText(str(stats[EstadoEmergencia.PENDIENTE]))
-        self.kpi_revision[1].setText(str(stats[EstadoEmergencia.EN_REVISION]))
-        self.kpi_atendidos[1].setText(str(stats[EstadoEmergencia.ATENDIDO]))
-        self.kpi_resueltos[1].setText(str(stats[EstadoEmergencia.RESUELTO]))
+        self._limpiar_reportes_recientes()
 
-        # Limpiar y recargar las filas de reportes recientes
-        while self.recientes_box.count():
-            item = self.recientes_box.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-
-        if self._controller.backend_error:
-            self.lbl_error_backend.setText(f"⚠️ {self._controller.backend_error}")
+        if backend_error:
+            self.lbl_error_backend.setText(f"⚠️ {backend_error}")
             self.lbl_error_backend.setVisible(True)
+        else:
+            self.lbl_error_backend.setVisible(False)
 
         if not recientes:
             self.recientes_box.addWidget(self._mk_empty_recent_reports())
@@ -394,3 +491,40 @@ class DashboardView(QWidget):
 
         for em in recientes:
             self.recientes_box.addWidget(self._mk_reciente_row(em))
+
+    def _mostrar_error_carga_dashboard(self, mensaje: str) -> None:
+        self._limpiar_reportes_recientes()
+        self.recientes_box.addWidget(self._mk_empty_recent_reports())
+        self.lbl_error_backend.setText(
+            f"⚠️ No fue posible cargar el dashboard: {mensaje}"
+        )
+        self.lbl_error_backend.setVisible(True)
+
+    def _limpiar_reportes_recientes(self) -> None:
+        while self.recientes_box.count():
+            item = self.recientes_box.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+    def _finalizar_carga_dashboard(self) -> None:
+        self._cargando_dashboard = False
+        if self._dashboard_thread is not None:
+            self._dashboard_thread.deleteLater()
+        self._dashboard_thread = None
+        self._dashboard_worker = None
+
+    def detener_carga(self) -> None:
+        """Espera el cierre ordenado del worker si la ventana se destruye."""
+        thread = self._dashboard_thread
+        if thread is not None and thread.isRunning():
+            thread.quit()
+            thread.wait()
+        if thread is not None:
+            thread.deleteLater()
+        self._cargando_dashboard = False
+        self._dashboard_worker = None
+        self._dashboard_thread = None
+
+    def closeEvent(self, event) -> None:
+        self.detener_carga()
+        super().closeEvent(event)
