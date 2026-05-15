@@ -84,16 +84,24 @@ class DashboardView(QWidget):
 
         acciones_layout = QHBoxLayout()
         acciones_layout.setSpacing(14)
+
         acciones_layout.addWidget(self._mk_action_card(
-            "🚨", "Reportar emergencia",
-            "Registra un incidente en tu comunidad",
-            "#22A63A", self.ir_a_registrar.emit,
+            "🚨",
+            "Reportar emergencia",
+            "Acción principal para registrar incidentes en tu comunidad",
+            "#005A9C",
+            self.ir_a_registrar.emit,
+            destacada=True,
         ))
+
         acciones_layout.addWidget(self._mk_action_card(
-            "📋", "Ver todos los reportes",
+            "📋",
+            "Ver todos los reportes",
             "Revisa el listado completo de incidentes",
-            "#005A9C", self.ir_a_listado.emit,
+            "#005A9C",
+            self.ir_a_listado.emit,
         ))
+
         layout.addLayout(acciones_layout)
 
         # ---- Reportes recientes ----
@@ -109,7 +117,7 @@ class DashboardView(QWidget):
         self.recientes_container = QFrame()
         self.recientes_container.setLayout(self.recientes_box)
         layout.addWidget(self.recientes_container)
-        
+
         self.lbl_error_backend = QLabel("")
         self.lbl_error_backend.setStyleSheet(
             "color: #D92D20; background: #FFF0F0; border-radius: 8px; "
@@ -119,7 +127,7 @@ class DashboardView(QWidget):
         self.lbl_error_backend.setWordWrap(True)
         self.lbl_error_backend.setVisible(False)
         layout.addWidget(self.lbl_error_backend)
-        
+
         layout.addStretch()
 
     # ---- Helpers de construcción de tarjetas ----
@@ -127,54 +135,107 @@ class DashboardView(QWidget):
         card = QFrame()
         card.setObjectName("kpiCard")
         card.setMinimumHeight(110)
+
         lay = QVBoxLayout(card)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(4)
+
         lbl_num = QLabel(numero)
         lbl_num.setStyleSheet(f"font-size: 38px; font-weight: 800; color: {color};")
         lay.addWidget(lbl_num)
+
         lbl_txt = QLabel(etiqueta)
         lbl_txt.setObjectName("kpiLabel")
         lay.addWidget(lbl_txt)
+
         return card, lbl_num
 
-    def _mk_action_card(self, icono: str, titulo: str, descripcion: str,
-                        color: str, on_click) -> QFrame:
+    def _mk_action_card(
+        self,
+        icono: str,
+        titulo: str,
+        descripcion: str,
+        color: str,
+        on_click,
+        destacada: bool = False,
+    ) -> QFrame:
+
         card = QFrame()
+
+        if destacada:
+            card.setStyleSheet(
+                """
+                QFrame {
+                    background-color: #005A9C;
+                    border: 1px solid #073B6B;
+                    border-radius: 14px;
+                }
+
+                QFrame:hover {
+                    background-color: #073B6B;
+                }
+                """
+            )
+
         card.setObjectName("actionCard")
-        card.setMinimumHeight(110)
+        card.setMinimumHeight(118)
         card.setCursor(Qt.PointingHandCursor)
+
         lay = QHBoxLayout(card)
         lay.setContentsMargins(20, 16, 20, 16)
         lay.setSpacing(16)
 
+        icon_background = "#FFFFFF" if destacada else color
+        icon_text_color = "#005A9C" if destacada else "white"
+
         icon_lbl = QLabel(icono)
         icon_lbl.setStyleSheet(
-            f"background-color: {color}; color: white; font-size: 20px; "
-            f"border-radius: 24px; min-width: 48px; min-height: 48px; "
-            f"max-width: 48px; max-height: 48px; border: none;"
+            f"background-color: {icon_background}; "
+            f"color: {icon_text_color}; "
+            "font-size: 20px; "
+            "font-weight: 700; "
+            "border-radius: 24px; "
+            "min-width: 48px; "
+            "min-height: 48px; "
+            "max-width: 48px; "
+            "max-height: 48px; "
+            "border: none;"
         )
+
         icon_lbl.setAlignment(Qt.AlignCenter)
         lay.addWidget(icon_lbl)
 
         text_box = QVBoxLayout()
-        text_box.setSpacing(2)
+        text_box.setSpacing(4)
+
+        title_color = "white" if destacada else "#102A43"
+        desc_color = "#D9E2EC" if destacada else "#52616B"
+
         t = QLabel(titulo)
         t.setStyleSheet(
-            "font-size: 15px; font-weight: 700; color: #102A43; "
-            "background: transparent; border: none;"
+            f"font-size: 16px; "
+            f"font-weight: 800; "
+            f"color: {title_color}; "
+            "background: transparent; "
+            "border: none;"
         )
         text_box.addWidget(t)
+
         d = QLabel(descripcion)
         d.setStyleSheet(
-            "font-size: 12px; color: #52616B; background: transparent; border: none;"
+            f"font-size: 12px; "
+            f"color: {desc_color}; "
+            "background: transparent; "
+            "border: none;"
         )
         d.setWordWrap(True)
         text_box.addWidget(d)
+
         lay.addLayout(text_box)
         lay.addStretch()
 
         card.mousePressEvent = lambda ev: on_click()
+
         return card
 
     def _mk_empty_recent_reports(self) -> QFrame:
@@ -237,7 +298,7 @@ class DashboardView(QWidget):
             "Crítica": "#D92D20", "Alta": "#F2A900",
             "Media": "#D69E2E",   "Baja": "#22A63A",
         }.get(emergencia.nivel_urgencia.value, "#52616B")
-        
+
         dot = QLabel()
         dot.setStyleSheet(
             f"background-color: {color_urg}; border-radius: 5px; "
@@ -249,7 +310,7 @@ class DashboardView(QWidget):
         text_box = QVBoxLayout()
         text_box.setContentsMargins(0, 0, 0, 0)
         text_box.setSpacing(4)
-        
+
         titulo = QLabel(emergencia.tipo.value)
         titulo.setStyleSheet(
             "font-size: 14px; font-weight: 700; color: #102A43; "
@@ -265,7 +326,7 @@ class DashboardView(QWidget):
         )
         ubicacion.setWordWrap(True)
         text_box.addWidget(ubicacion)
-        
+
         meta = QLabel(
             f"#{emergencia.id} · {emergencia.nombre_reportante} · "
             f"{emergencia.fecha_reporte.strftime('%d-%m-%Y %H:%M')}"
@@ -275,7 +336,7 @@ class DashboardView(QWidget):
         )
         meta.setWordWrap(True)
         text_box.addWidget(meta)
-        
+
         l.addLayout(text_box, 1)
 
         badge = crear_badge_estado(emergencia.estado.value)
@@ -295,6 +356,7 @@ class DashboardView(QWidget):
         badge_box.addWidget(urgencia, 0, Qt.AlignRight)
         badge_box.addStretch()
         l.addLayout(badge_box)
+
         return f
 
     # ---- API pública ----
@@ -310,6 +372,7 @@ class DashboardView(QWidget):
 
         emergencias = self._controller.listar()
         stats = self._controller.estadisticas(emergencias)
+
         self.kpi_pendientes[1].setText(str(stats[EstadoEmergencia.PENDIENTE]))
         self.kpi_revision[1].setText(str(stats[EstadoEmergencia.EN_REVISION]))
         self.kpi_atendidos[1].setText(str(stats[EstadoEmergencia.ATENDIDO]))
