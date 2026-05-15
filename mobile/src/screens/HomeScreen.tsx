@@ -7,7 +7,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { getEmergencies } from "../services/emergencyService";
 import { colors, radii, shadows, spacing } from "../styles/theme";
 import type { AuthenticatedUser } from "../types/auth";
-import type { Emergency, EmergencyStatus } from "../types/emergency";
+import type { Emergency } from "../types/emergency";
 
 interface HomeScreenProps {
   onLogout: () => void;
@@ -16,32 +16,92 @@ interface HomeScreenProps {
   user: AuthenticatedUser | null;
 }
 
-const summaryConfig: Array<{ label: string; status: EmergencyStatus; color: string }> = [
-  { color: colors.warning, label: "Pendientes", status: "pending" },
-  { color: colors.info, label: "En revisión", status: "in_review" },
-  { color: colors.success, label: "Resueltas", status: "resolved" },
-  { color: colors.danger, label: "Críticas", status: "critical" },
+interface SummaryItem {
+  color: string;
+  key: string;
+  label: string;
+  matches: (emergency: Emergency) => boolean;
+}
+
+const summaryConfig: SummaryItem[] = [
+  {
+    color: colors.warning,
+    key: "pending",
+    label: "Pendientes",
+    matches: (emergency) => emergency.status === "pending",
+  },
+  {
+    color: colors.info,
+    key: "in_review",
+    label: "En revisión",
+    matches: (emergency) => emergency.status === "in_review",
+  },
+  {
+    color: colors.success,
+    key: "resolved",
+    label: "Resueltas",
+    matches: (emergency) => emergency.status === "resolved",
+  },
+  {
+    color: colors.danger,
+    key: "critical",
+    label: "Críticas",
+    matches: (emergency) => emergency.urgencyLevel === "critical",
+  },
 ];
 
 const getRoleLabel = (roleId?: number) => (roleId === 1 ? "Administrador" : "Vecino");
 
 export function HomeScreen({ onLogout, onRegisterEmergency, onViewEmergencies, user }: HomeScreenProps) {
   const [emergencies, setEmergencies] = useState<Emergency[]>([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const latestEmergencies = emergencies.slice(0, 3);
 
   useEffect(() => {
     let isMounted = true;
 
-    getEmergencies().then((items) => {
-      if (isMounted) {
-        setEmergencies(items);
+    async function loadEmergencies() {
+      try {
+        const items = await getEmergencies();
+
+        if (isMounted) {
+          setEmergencies(items);
+          setErrorMessage("");
+        }
+      } catch {
+        if (isMounted) {
+          setErrorMessage("No fue posible cargar las emergencias. Verifica que el backend esté disponible.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    });
+    }
+
+    loadEmergencies();
 
     return () => {
       isMounted = false;
     };
   }, []);
+
+  const renderLatestEmergencies = () => {
+    if (isLoading) {
+      return <Text style={styles.feedbackText}>Cargando emergencias...</Text>;
+    }
+
+    if (errorMessage) {
+      return <Text style={styles.errorText}>{errorMessage}</Text>;
+    }
+
+    if (latestEmergencies.length === 0) {
+      return <Text style={styles.feedbackText}>No hay emergencias registradas.</Text>;
+    }
+
+    return latestEmergencies.map((emergency) => <EmergencyCard emergency={emergency} key={emergency.id} />);
+  };
 
   return (
     <AppLayout
@@ -60,10 +120,10 @@ export function HomeScreen({ onLogout, onRegisterEmergency, onViewEmergencies, u
 
       <View style={styles.summaryGrid}>
         {summaryConfig.map((item) => {
-          const count = emergencies.filter((emergency) => emergency.status === item.status).length;
+          const count = emergencies.filter(item.matches).length;
 
           return (
-            <View key={item.status} style={styles.summaryCard}>
+            <View key={item.key} style={styles.summaryCard}>
               <View style={[styles.summaryIndicator, { backgroundColor: item.color }]} />
               <Text style={styles.summaryCount}>{count}</Text>
               <Text style={styles.summaryLabel}>{item.label}</Text>
@@ -75,15 +135,11 @@ export function HomeScreen({ onLogout, onRegisterEmergency, onViewEmergencies, u
       <View style={styles.sectionHeader}>
         <View>
           <Text style={styles.sectionTitle}>Últimos reportes</Text>
-          <Text style={styles.sectionSubtitle}>Emergencias simuladas para validar el flujo inicial.</Text>
+          <Text style={styles.sectionSubtitle}>Últimos reportes registrados en la comunidad.</Text>
         </View>
       </View>
 
-      <View style={styles.list}>
-        {latestEmergencies.map((emergency) => (
-          <EmergencyCard emergency={emergency} key={emergency.id} />
-        ))}
-      </View>
+      <View style={styles.list}>{renderLatestEmergencies()}</View>
 
       <PrimaryButton label="Ver listado completo" onPress={onViewEmergencies} variant="secondary" />
     </AppLayout>
@@ -98,6 +154,18 @@ const styles = StyleSheet.create({
   list: {
     gap: spacing.md,
     marginBottom: spacing.lg,
+  },
+  errorText: {
+    color: colors.danger,
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 20,
+  },
+  feedbackText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 20,
   },
   sectionHeader: {
     marginBottom: spacing.md,
