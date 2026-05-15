@@ -148,6 +148,7 @@ Vecino123
 GET /health
 GET /api/v1/system/info
 POST /api/v1/auth/login
+POST /api/v1/users/
 GET /api/v1/emergencies/
 GET /api/v1/emergencies/catalogs
 GET /api/v1/emergencies/{emergency_id}
@@ -240,6 +241,63 @@ Body de prueba para vecino:
   "password": "vecino1234"
 }
 ```
+
+---
+
+# Registro básico de usuarios
+
+El módulo `users` permite crear usuarios reales desde el panel administrador
+desktop.
+
+Endpoint:
+
+```text
+POST /api/v1/users/
+```
+
+Body de ejemplo:
+
+```json
+{
+  "rut": "12.345.678-5",
+  "full_name": "Nuevo Vecino",
+  "email": "nuevo.vecino@vecinoseguro.cl",
+  "password": "Vecino1234",
+  "role_id": 2
+}
+```
+
+Roles válidos en esta etapa:
+
+* `1`: administrador.
+* `2`: vecino.
+
+Respuesta segura:
+
+```json
+{
+  "id": 4,
+  "rut": "12345678-5",
+  "full_name": "Nuevo Vecino",
+  "email": "nuevo.vecino@vecinoseguro.cl",
+  "role_id": 2
+}
+```
+
+La respuesta nunca incluye `password` ni `password_hash`. La contraseña se
+guarda en MySQL/MariaDB como hash bcrypt.
+
+Respuestas esperadas:
+
+* `201 Created`: usuario creado.
+* `400 Bad Request`: RUT, email, contraseña, nombre o rol inválido.
+* `409 Conflict`: RUT o email duplicado.
+* `500 Internal Server Error`: error no controlado.
+
+Limitación temporal: este endpoint aún no exige token ni permisos backend. Por
+ahora el acceso se restringe desde la app desktop mostrando el formulario solo a
+usuarios con rol administrador. La autorización backend avanzada queda para una
+etapa posterior.
 
 ---
 
@@ -448,11 +506,14 @@ Ejemplo de respuesta:
 2. Abrir `http://127.0.0.1:8000/health`.
 3. Abrir `http://127.0.0.1:8000/docs`.
 4. Probar login real con las credenciales de desarrollo.
-5. Probar `GET /api/v1/emergencies/`.
-6. Probar `GET /api/v1/emergencies/catalogs`.
-7. Probar `GET /api/v1/reports/summary`.
-8. Probar `GET /api/v1/reports/dashboard-cards`.
-9. Verificar que las respuestas sean coherentes con los datos cargados desde `database/seed.sql`.
+5. Probar `POST /api/v1/users/` con usuario vecino y administrador.
+6. Probar errores de RUT inválido, RUT duplicado, email duplicado y contraseña corta.
+7. Confirmar que la respuesta de usuarios no incluya `password_hash`.
+8. Probar `GET /api/v1/emergencies/`.
+9. Probar `GET /api/v1/emergencies/catalogs`.
+10. Probar `GET /api/v1/reports/summary`.
+11. Probar `GET /api/v1/reports/dashboard-cards`.
+12. Verificar que las respuestas sean coherentes con los datos cargados desde `database/seed.sql`.
 
 ---
 

@@ -66,6 +66,10 @@ class ApiClient:
         """Crea una emergencia real en el backend FastAPI."""
         return self._request_json("POST", "/api/v1/emergencies/", json=payload)
 
+    def create_user(self, payload: dict) -> dict:
+        """Crea un usuario real en el backend FastAPI."""
+        return self._request_json("POST", "/api/v1/users/", json=payload)
+
     def update_emergency_status(self, emergency_id: int, payload: dict) -> dict:
         """Actualiza el estado de una emergencia real en el backend."""
         return self._request_json(
@@ -117,6 +121,8 @@ class ApiClient:
     def _message_for_status(self, status_code: int) -> str:
         if status_code in (400, 422):
             return "El backend rechazó la solicitud. Verifica los datos enviados."
+        if status_code == 409:
+            return "El usuario no pudo crearse porque ya existe un dato duplicado."
         if status_code == 404:
             return "No se encontró el recurso solicitado en el backend."
         if status_code >= 500:
