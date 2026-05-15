@@ -1,14 +1,16 @@
-import { mockEmergencies } from "../data/mockEmergencies";
-import { getBackendEmergencies } from "./apiClient";
+import {
+  createBackendEmergency,
+  getBackendEmergencies,
+  getEmergencyCatalogs as fetchEmergencyCatalogs,
+} from "./apiClient";
 import type {
   BackendEmergency,
   CreateEmergencyInput,
   Emergency,
+  EmergencyCatalogs,
   EmergencyStatus,
   UrgencyLevel,
 } from "../types/emergency";
-
-let emergencyStore: Emergency[] = [...mockEmergencies];
 
 const cloneEmergency = (emergency: Emergency): Emergency => ({ ...emergency });
 
@@ -66,6 +68,10 @@ function mapBackendEmergency(emergency: BackendEmergency): Emergency {
   };
 }
 
+export async function getEmergencyCatalogs(): Promise<EmergencyCatalogs> {
+  return fetchEmergencyCatalogs();
+}
+
 export async function getEmergencies(): Promise<Emergency[]> {
   const backendEmergencies = await getBackendEmergencies();
 
@@ -79,17 +85,13 @@ export async function getEmergencyById(id: string): Promise<Emergency | null> {
 }
 
 export async function createEmergency(input: CreateEmergencyInput): Promise<Emergency> {
-  const emergency: Emergency = {
-    id: `emg-${Date.now()}`,
-    type: input.type.trim(),
+  const backendEmergency = await createBackendEmergency({
     description: input.description.trim(),
     location: input.location.trim(),
-    status: "pending",
-    urgencyLevel: input.urgencyLevel,
-    createdAt: new Date().toISOString(),
-  };
+    type: input.type.trim(),
+    urgency_level: input.urgencyLevel.trim(),
+    user_id: input.userId,
+  });
 
-  emergencyStore = [emergency, ...emergencyStore];
-
-  return cloneEmergency(emergency);
+  return mapBackendEmergency(backendEmergency);
 }
