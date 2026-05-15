@@ -1,6 +1,12 @@
 import { environment } from "../config/environment";
 import type { AuthenticatedUser, LoginResponse } from "../types/auth";
-import type { BackendEmergency } from "../types/emergency";
+import type {
+  BackendEmergency,
+  BackendEmergencyCatalogs,
+  CatalogOption,
+  CreateBackendEmergencyInput,
+  EmergencyCatalogs,
+} from "../types/emergency";
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 
@@ -41,6 +47,10 @@ const loginNetworkErrorMessage =
   "No fue posible conectar con el backend. Verifica que FastAPI esté en ejecución y que la URL de API sea correcta.";
 const emergenciesNetworkErrorMessage =
   "No fue posible cargar las emergencias. Verifica que el backend esté disponible y que la URL de API sea correcta.";
+const emergencyCatalogsNetworkErrorMessage =
+  "No fue posible cargar las opciones del formulario. Verifica que el backend esté disponible.";
+const createEmergencyNetworkErrorMessage =
+  "No fue posible registrar la emergencia. Verifica que el backend esté disponible.";
 
 function normalizeRutForLogin(rut: string) {
   return rut.trim().replace(/\./g, "").toUpperCase();
@@ -112,6 +122,54 @@ function isBackendEmergency(data: unknown): data is BackendEmergency {
   );
 }
 
+function isCatalogOption(data: unknown): data is CatalogOption {
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+
+  const option = data as Partial<CatalogOption>;
+
+  return typeof option.value === "string" && typeof option.label === "string";
+}
+
+function isBackendEmergencyCatalogs(data: unknown): data is BackendEmergencyCatalogs {
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+
+  const catalogs = data as Partial<BackendEmergencyCatalogs>;
+
+  return (
+    Array.isArray(catalogs.emergency_types) &&
+    catalogs.emergency_types.every(isCatalogOption) &&
+    Array.isArray(catalogs.urgency_levels) &&
+    catalogs.urgency_levels.every(isCatalogOption) &&
+    Array.isArray(catalogs.statuses) &&
+    catalogs.statuses.every(isCatalogOption)
+  );
+}
+
+function mapEmergencyCatalogs(catalogs: BackendEmergencyCatalogs): EmergencyCatalogs {
+  return {
+    emergencyTypes: catalogs.emergency_types,
+    urgencyLevels: catalogs.urgency_levels,
+  };
+}
+
+async function getBackendErrorMessage(response: Response, fallbackMessage: string) {
+  try {
+    const data = (await response.json()) as { detail?: unknown };
+
+    if (typeof data.detail === "string" && data.detail.trim()) {
+      return data.detail;
+    }
+  } catch {
+    return fallbackMessage;
+  }
+
+  return fallbackMessage;
+}
+
 export async function login(rut: string, password: string): Promise<LoginResponse> {
   let response: Response;
 
@@ -176,6 +234,73 @@ export async function getBackendEmergencies(): Promise<BackendEmergency[]> {
 
   if (!Array.isArray(data) || !data.every(isBackendEmergency)) {
     throw new Error("El backend devolvió una respuesta de emergencias inválida.");
+  }
+
+  return data;
+}
+
+export async function getEmergencyCatalogs(): Promise<EmergencyCatalogs> {
+  let response: Response;
+
+  try {
+    response = await fetch(buildApiUrl("/api/v1/emergencies/catalogs"));
+  } catch {
+    throw new Error(emergencyCatalogsNetworkErrorMessage);
+  }
+
+  if (!response.ok) {
+    throw new Error(await getBackendErrorMessage(response, "No fue posible cargar las opciones del formulario."));
+  }
+
+  let data: unknown;
+
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("El backend devolvió una respuesta de catálogos inválida.");
+  }
+
+  if (!isBackendEmergencyCatalogs(data)) {
+    throw new Error("El backend devolvió una respuesta de catálogos inválida.");
+  }
+
+  return mapEmergencyCatalogs(data);
+}
+
+export async function createBackendEmergency(payload: CreateBackendEmergencyInput): Promise<BackendEmergency> {
+  let response: Response;
+
+  try {
+    response = await fetch(buildApiUrl("/api/v1/emergencies/"), {
+      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+  } catch {
+    throw new Error(createEmergencyNetworkErrorMessage);
+  }
+
+  if (!response.ok) {
+    const fallbackMessage =
+      response.status === 400 || response.status === 422
+        ? "Revisa los datos del reporte e inténtalo nuevamente."
+        : "No fue posible registrar la emergencia.";
+
+    throw new Error(await getBackendErrorMessage(response, fallbackMessage));
+  }
+
+  let data: unknown;
+
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("El backend devolvió una respuesta de emergencia inválida.");
+  }
+
+  if (!isBackendEmergency(data)) {
+    throw new Error("El backend devolvió una respuesta de emergencia inválida.");
   }
 
   return data;

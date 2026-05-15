@@ -2,7 +2,7 @@
 
 Avance inicial de la app movil de VecinoSeguro, preparada con Expo SDK 54, React Native y TypeScript para uso con la version actual de Expo Go.
 
-VecinoSeguro permite reportar, visualizar y organizar emergencias locales de forma rapida, clara y colaborativa. Esta version conecta el login movil y el listado de emergencias con el backend FastAPI real, manteniendo la creacion movil de emergencias como flujo simulado.
+VecinoSeguro permite reportar, visualizar y organizar emergencias locales de forma rapida, clara y colaborativa. Esta version conecta el login, el listado y la creacion movil de emergencias con el backend FastAPI real.
 
 ## Requisitos
 
@@ -39,7 +39,7 @@ La app lee la URL base del backend desde variables publicas de Expo. No se debe 
 EXPO_PUBLIC_API_URL=http://localhost:8000
 ```
 
-El login movil consume `POST /api/v1/auth/login` y el Home/listado de emergencias consumen `GET /api/v1/emergencies/`, por lo que requiere que FastAPI este levantado y accesible desde el dispositivo donde corre Expo.
+El login movil consume `POST /api/v1/auth/login`. El Home/listado de emergencias consumen `GET /api/v1/emergencies/`. El formulario carga opciones desde `GET /api/v1/emergencies/catalogs` y crea reportes reales con `POST /api/v1/emergencies/`, por lo que requiere que FastAPI este levantado y accesible desde el dispositivo donde corre Expo.
 
 Para web o ciertos emuladores, `localhost` puede funcionar. En un telefono fisico con Expo Go, `localhost` apunta al telefono y no al PC; usa la IP local del computador conectado a la misma red WiFi:
 
@@ -72,32 +72,25 @@ Contrasena: vecino1234
 - Estado de usuario autenticado en memoria mientras la app esta abierta.
 - Home/dashboard con resumen de emergencias reales desde `GET /api/v1/emergencies/`.
 - Listado de emergencias reales desde `GET /api/v1/emergencies/`.
-- Formulario visual para registrar emergencia, aun simulado en mobile.
+- Formulario movil con catalogos reales desde `GET /api/v1/emergencies/catalogs`.
+- Creacion de emergencias reales en backend con `POST /api/v1/emergencies/`.
 - Componentes reutilizables para boton, tarjeta, badge de estado y layout base.
 - Paleta visual alineada a la identidad de VecinoSeguro.
 - Cliente API preparado para consumir endpoints de FastAPI.
-
-## Funcionalidades simuladas
-
-- El registro de emergencias muestra confirmacion visual, pero no persiste en backend.
-- Las emergencias creadas desde el formulario simulado no aparecen todavia en el listado real.
-- La creacion real de emergencias desde mobile se implementara en una etapa posterior.
 
 ## Fuera de alcance en esta etapa
 
 - Geolocalizacion real.
 - Mapas.
 - Notificaciones push.
-- Persistencia real desde mobile.
 - Persistencia de sesion con AsyncStorage.
-- Creacion de emergencias reales desde mobile.
 - Chat, roles avanzados o integraciones institucionales.
 
 ## Estructura relevante
 
 - `app/`: punto de entrada para Expo Router.
 - `src/components/`: componentes reutilizables.
-- `src/data/`: datos simulados usados por flujos aun no conectados al backend.
+- `src/data/`: datos de referencia heredados de iteraciones iniciales.
 - `src/screens/`: pantallas principales.
 - `src/services/`: comunicación con FastAPI.
 - `src/styles/`: tokens visuales de la app.

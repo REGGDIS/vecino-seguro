@@ -35,7 +35,7 @@ export default function Index() {
           user={authenticatedUser}
         />
       ) : null}
-      {screen === "form" ? <EmergencyFormScreen onBack={() => setScreen("home")} /> : null}
+      {screen === "form" ? <EmergencyFormScreen onBack={() => setScreen("home")} user={authenticatedUser} /> : null}
       {screen === "list" ? (
         <EmergencyListScreen onBack={() => setScreen("home")} onRegisterEmergency={() => setScreen("form")} />
       ) : null}
