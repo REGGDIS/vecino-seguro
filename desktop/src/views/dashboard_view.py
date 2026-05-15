@@ -177,6 +177,53 @@ class DashboardView(QWidget):
         card.mousePressEvent = lambda ev: on_click()
         return card
 
+    def _mk_empty_recent_reports(self) -> QFrame:
+        """Construye el bloque visual para el estado vacío de reportes recientes."""
+        card = QFrame()
+        card.setObjectName("emptyRecentReports")
+        card.setMinimumHeight(120)
+        card.setStyleSheet(
+            "QFrame#emptyRecentReports {"
+            "background-color: #FFFFFF;"
+            "border: 1px dashed #D9E2EC;"
+            "border-radius: 10px;"
+            "}"
+        )
+
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(24, 22, 24, 22)
+        layout.setSpacing(8)
+
+        icono = QLabel("📭 Sin reportes")
+        icono.setAlignment(Qt.AlignCenter)
+        icono.setStyleSheet(
+            "font-size: 12px; font-weight: 600; color: #52616B;"
+            "background: transparent; border: none;"
+        )
+        layout.addWidget(icono)
+
+        titulo = QLabel("No hay reportes recientes")
+        titulo.setAlignment(Qt.AlignCenter)
+        titulo.setStyleSheet(
+            "font-size: 15px; font-weight: 700; color: #102A43;"
+            "background: transparent; border: none;"
+        )
+        layout.addWidget(titulo)
+
+        descripcion = QLabel(
+            "Cuando se registren emergencias en la comunidad,\n"
+            "aparecerán en esta sección."
+        )
+        descripcion.setAlignment(Qt.AlignCenter)
+        descripcion.setWordWrap(True)
+        descripcion.setStyleSheet(
+            "font-size: 12px; color: #52616B;"
+            "background: transparent; border: none;"
+        )
+        layout.addWidget(descripcion)
+
+        return card
+
     def _mk_reciente_row(self, emergencia) -> QFrame:
         f = QFrame()
         f.setObjectName("recentRow")
@@ -281,10 +328,7 @@ class DashboardView(QWidget):
             self.lbl_error_backend.setVisible(True)
 
         if not recientes:
-            vacio = QLabel("No hay reportes aún.")
-            vacio.setStyleSheet("color: #9CA3AF; padding: 24px; font-style: italic;")
-            vacio.setAlignment(Qt.AlignCenter)
-            self.recientes_box.addWidget(vacio)
+            self.recientes_box.addWidget(self._mk_empty_recent_reports())
             return
 
         for em in recientes:
