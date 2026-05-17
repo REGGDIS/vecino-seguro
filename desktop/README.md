@@ -84,6 +84,12 @@ worker de datos. Primero muestra la interfaz con un estado temporal de carga y
 luego actualiza KPIs, reportes recientes y mensajes de error desde el hilo
 principal de PySide6.
 
+El controlador desktop reutiliza durante pocos segundos los datos optimizados
+del dashboard para evitar consultas repetidas cuando el usuario vuelve rápido a
+esa vista. Esta caché temporal se invalida al registrar una emergencia o al
+cambiar correctamente el estado de un reporte, de modo que los KPIs y reportes
+recientes reflejen los cambios relevantes.
+
 El listado general de emergencias sigue usando:
 
 - `GET /api/v1/emergencies/`
