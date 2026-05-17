@@ -54,7 +54,8 @@ datos reales del entorno local.
 - **Dashboard** con KPIs por estado, accesos rápidos y reportes recientes.
 - **Formulario de registro de emergencia** con validaciones de negocio.
 - **Listado de emergencias** con filtro por estado y panel de detalle.
-- **Detalle del reporte** con cambio de estado disponible solo para administradores.
+- **Detalle del reporte** con cambio de estado y eliminación con confirmación
+  disponibles solo para administradores.
 - **Registro básico de usuarios** visible solo para administradores.
 
 ## Integración con backend
@@ -71,6 +72,8 @@ ApiClient → FastAPI` y consume:
 - `POST /api/v1/emergencies/` para registrar emergencias reales.
 - `PATCH /api/v1/emergencies/{emergency_id}/status` para cambiar estados reales
   desde el panel administrador.
+- `DELETE /api/v1/emergencies/{emergency_id}` para eliminar reportes reales
+  desde el panel administrador, previa confirmación.
 
 El dashboard consume endpoints optimizados para no descargar el listado completo
 al cargar KPIs y reportes recientes:
@@ -86,9 +89,9 @@ principal de PySide6.
 
 El controlador desktop reutiliza durante pocos segundos los datos optimizados
 del dashboard para evitar consultas repetidas cuando el usuario vuelve rápido a
-esa vista. Esta caché temporal se invalida al registrar una emergencia o al
-cambiar correctamente el estado de un reporte, de modo que los KPIs y reportes
-recientes reflejen los cambios relevantes.
+esa vista. Esta caché temporal se invalida al registrar una emergencia, al
+cambiar correctamente el estado de un reporte o al eliminarlo, de modo que los
+KPIs y reportes recientes reflejen los cambios relevantes.
 
 El listado general de emergencias sigue usando:
 
@@ -104,10 +107,13 @@ El desktop no envía `status`; el backend asigna el estado inicial
 `pendiente`.
 
 En el listado de emergencias, los administradores pueden actualizar una
-emergencia real a `Pendiente`, `En revisión` o `Resuelto`. El estado `Atendido`
+emergencia real a `Pendiente`, `En revisión` o `Resuelto`, y también eliminar
+un reporte mediante confirmación. Tras una eliminación correcta, la tabla se
+refresca, el detalle vuelve al estado vacío, el contador total se recalcula y
+se emite `cambio_realizado` para actualizar el dashboard. El estado `Atendido`
 permanece solo en el mock local y no se envía al backend hasta que exista en la
-API. La observación opcional viaja como `comment`, pero el backend actual no la
-persiste; queda reservada para una futura issue de historial.
+API. El comentario de seguimiento viaja como `comment`, pero el backend actual
+no lo persiste; queda reservado para una futura issue de historial.
 
 Después de un login exitoso, el desktop construye un `Usuario` local con el
 `id`, `rut`, `full_name`, `email` y `role_id` retornados por el backend. El

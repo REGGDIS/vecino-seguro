@@ -108,6 +108,12 @@ class EmergencyService:
 
         return updated
 
+    def delete_emergency(self, emergency_id: int) -> None:
+        """Elimina una emergencia existente."""
+        deleted = self.repository.delete_by_id(emergency_id)
+        if not deleted:
+            raise EmergencyNotFoundError("Emergencia no encontrada")
+
     def _validate_required_fields(self, emergency_data: EmergencyCreate) -> None:
         if emergency_data.user_id is None:
             raise EmergencyValidationError("El usuario es obligatorio")

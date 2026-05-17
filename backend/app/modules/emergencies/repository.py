@@ -154,6 +154,32 @@ class EmergencyRepository:
                 cursor.close()
             connection.close()
 
+    def delete_by_id(self, emergency_id: int) -> bool:
+        """Elimina una emergencia por ID; retorna True si eliminó un registro."""
+        query = """
+            DELETE FROM emergencies
+            WHERE id = %s
+        """
+
+        connection = get_connection()
+        cursor = None
+        try:
+            cursor = connection.cursor()
+            cursor.execute(query, (emergency_id,))
+            deleted = cursor.rowcount > 0
+            connection.commit()
+            return deleted
+        except Exception:
+            try:
+                connection.rollback()
+            except Exception:
+                pass
+            raise
+        finally:
+            if cursor is not None:
+                cursor.close()
+            connection.close()
+
     def create_emergency(
         self,
         emergency_data: EmergencyCreate,
