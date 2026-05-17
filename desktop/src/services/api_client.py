@@ -95,6 +95,32 @@ class ApiClient:
             json=payload,
         )
 
+    def delete_emergency(self, emergency_id: int) -> None:
+        """Elimina una emergencia real en el backend FastAPI."""
+        url = f"{self.base_url}/api/v1/emergencies/{emergency_id}"
+        try:
+            response = requests.delete(url, timeout=10)
+        except requests.Timeout as exc:
+            raise ApiClientError(
+                "No fue posible conectar con el backend. "
+                "La solicitud agotó el tiempo de espera."
+            ) from exc
+        except requests.ConnectionError as exc:
+            raise ApiClientError(
+                "No fue posible conectar con el backend. "
+                "Verifica que FastAPI esté en ejecución."
+            ) from exc
+        except requests.RequestException as exc:
+            raise ApiClientError(
+                "No fue posible conectar con el backend. "
+                "Verifica que FastAPI esté en ejecución."
+            ) from exc
+
+        if response.status_code >= 400:
+            detail = self._response_detail(response)
+            message = self._message_for_status(response.status_code)
+            raise ApiClientError(message, response.status_code, detail)
+
     def _request_json(self, method: str, path: str, **kwargs) -> dict | list[dict]:
         """Ejecuta una peticion HTTP y traduce errores a mensajes de usuario."""
         url = f"{self.base_url}{path}"

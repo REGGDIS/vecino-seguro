@@ -204,7 +204,7 @@ class EmergencyListView(QWidget):
         adm_lay = QVBoxLayout(self.admin_panel)
         adm_lay.setContentsMargins(16, 14, 16, 14)
         adm_lay.setSpacing(10)
-        t_admin = QLabel("⚙ Acciones del administrador")
+        t_admin = QLabel("⚙ Gestión del reporte")
         t_admin.setStyleSheet(
             "color: #92400E; font-weight: 700; font-size: 12px; "
             "background: transparent; border: none;"
@@ -229,7 +229,7 @@ class EmergencyListView(QWidget):
         cambio_row.addWidget(self.cb_nuevo_estado)
         adm_lay.addLayout(cambio_row)
 
-        lbl_o = QLabel("Observación (opcional):")
+        lbl_o = QLabel("Comentario de seguimiento")
         lbl_o.setStyleSheet(
             "color: #52616B; font-size: 11px; font-weight: 600; "
             "background: transparent; border: none;"
@@ -238,7 +238,7 @@ class EmergencyListView(QWidget):
         self.input_obs = QTextEdit()
         self.input_obs.setMaximumHeight(60)
         self.input_obs.setPlaceholderText(
-            "Notas internas para el seguimiento del reporte…"
+            "Ej: Reporte revisado por administración vecinal."
         )
         adm_lay.addWidget(self.input_obs)
 
@@ -246,6 +246,12 @@ class EmergencyListView(QWidget):
         estilizar_boton(self.btn_actualizar, "primary")
         self.btn_actualizar.clicked.connect(self._actualizar_estado)
         adm_lay.addWidget(self.btn_actualizar)
+
+        self.btn_eliminar = QPushButton("Eliminar reporte")
+        estilizar_boton(self.btn_eliminar, "danger")
+        self.btn_eliminar.clicked.connect(self._eliminar_reporte)
+        adm_lay.addSpacing(4)
+        adm_lay.addWidget(self.btn_eliminar)
         lay.addWidget(self.admin_panel)
         lay.addStretch()
         return f
@@ -419,3 +425,30 @@ class EmergencyListView(QWidget):
                 self._mostrar_detalle(emergencia_id)
         else:
             QMessageBox.warning(self, "Error", msg)
+
+    def _eliminar_reporte(self) -> None:
+        if self._emergencia_seleccionada_id is None:
+            return
+
+        respuesta = QMessageBox.question(
+            self,
+            "Confirmar eliminación",
+            "¿Eliminar este reporte?\n\n"
+            "Esta acción quitará el reporte del sistema y no se podrá deshacer.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if respuesta != QMessageBox.StandardButton.Yes:
+            return
+
+        ok, msg = self._controller.eliminar(self._emergencia_seleccionada_id)
+        if not ok:
+            QMessageBox.warning(self, "No se pudo eliminar", msg)
+            return
+
+        QMessageBox.information(self, "Reporte eliminado", msg)
+        self.cambio_realizado.emit()
+        self._emergencia_seleccionada_id = None
+        self.tabla.clearSelection()
+        self.refrescar()
+        self.detalle_stack.setCurrentIndex(0)

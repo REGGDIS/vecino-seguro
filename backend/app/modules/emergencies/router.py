@@ -91,6 +91,20 @@ def get_emergency_by_id(emergency_id: int) -> EmergencySummary:
         ) from exc
 
 
+@router.delete("/{emergency_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_emergency(emergency_id: int) -> None:
+    """Elimina una emergencia por ID."""
+    try:
+        emergency_service.delete_emergency(emergency_id)
+    except EmergencyNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="No fue posible eliminar la emergencia",
+        ) from exc
+
+
 @router.post(
     "/",
     response_model=EmergencySummary,

@@ -156,6 +156,7 @@ GET /api/v1/emergencies/catalogs
 GET /api/v1/emergencies/{emergency_id}
 POST /api/v1/emergencies/
 PATCH /api/v1/emergencies/{emergency_id}/status
+DELETE /api/v1/emergencies/{emergency_id}
 GET /api/v1/reports/summary
 GET /api/v1/reports/dashboard-cards
 ```
@@ -470,6 +471,31 @@ Respuestas esperadas:
 * `400 Bad Request`
 * `404 Not Found`
 * `500 Internal Server Error`
+
+---
+
+## Eliminar emergencia
+
+```text
+DELETE /api/v1/emergencies/{emergency_id}
+```
+
+Elimina una emergencia real por ID desde la tabla `emergencies`. Su uso
+previsto es el panel administrador de la aplicación desktop.
+
+Respuestas esperadas:
+
+* `204 No Content`: emergencia eliminada correctamente, sin body de respuesta.
+* `404 Not Found`: la emergencia no existe.
+* `500 Internal Server Error`: error no controlado.
+
+No requiere cambios en `database/schema.sql`. Si existen registros asociados en
+`emergency_status_history`, la relación con `ON DELETE CASCADE` se encarga de
+eliminarlos junto con la emergencia.
+
+Limitación temporal: igual que otras acciones administrativas actuales, este
+endpoint aún no exige token ni permisos backend. En esta etapa el acceso se
+restringe desde la app desktop mostrando la acción solo a administradores.
 
 ---
 

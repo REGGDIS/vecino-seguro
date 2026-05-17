@@ -483,6 +483,40 @@ class EmergencyController:
             return "Emergencia no encontrada en el backend."
         return exc.message
 
+    def eliminar(self, emergencia_id: int) -> tuple[bool, str]:
+        """Elimina un reporte y limpia las caches relacionadas."""
+        if not isinstance(emergencia_id, int) or emergencia_id <= 0:
+            return False, "Debe seleccionar un reporte válido."
+
+        if self._api is not None:
+            try:
+                self._api.delete_emergency(emergencia_id)
+                self._ultima_lista = [
+                    emergencia
+                    for emergencia in self._ultima_lista
+                    if emergencia.id != emergencia_id
+                ]
+                self._invalidar_cache_dashboard()
+                return True, "Reporte eliminado correctamente."
+            except ApiClientError as exc:
+                return False, self._mensaje_api_error(exc)
+
+        delete_by_id = getattr(self._repo, "delete_by_id", None)
+        if not callable(delete_by_id):
+            return False, "La eliminación local no está disponible en este modo."
+
+        deleted = delete_by_id(emergencia_id)
+        if not deleted:
+            return False, "Emergencia no encontrada."
+
+        self._ultima_lista = [
+            emergencia
+            for emergencia in self._ultima_lista
+            if emergencia.id != emergencia_id
+        ]
+        self._invalidar_cache_dashboard()
+        return True, "Reporte eliminado correctamente."
+
     def cambiar_estado(
         self,
         emergencia_id: int,
