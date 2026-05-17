@@ -36,6 +36,7 @@ class LoginView(QWidget):
     def __init__(self, auth_controller: AuthController | None = None) -> None:
         super().__init__()
         self._auth = auth_controller or AuthController()
+        self._password_visible = False
         self.setWindowTitle("VecinoSeguro · Iniciar sesión")
         self.resize(960, 620)
         self._build_ui()
@@ -121,11 +122,36 @@ class LoginView(QWidget):
 
         der_layout.addWidget(self._mk_field_label("Contraseña"))
         der_layout.addSpacing(6)
+
+        password_row = QHBoxLayout()
+        password_row.setSpacing(8)
+
         self.input_password = QLineEdit()
         self.input_password.setEchoMode(QLineEdit.Password)
         self.input_password.setPlaceholderText("••••••••")
         self.input_password.returnPressed.connect(self._intentar_login)
-        der_layout.addWidget(self.input_password)
+
+        self.btn_toggle_password = QPushButton("Ver")
+        self.btn_toggle_password.setToolTip("Mostrar contraseña")
+        self.btn_toggle_password.setCursor(Qt.PointingHandCursor)
+        self.btn_toggle_password.setFixedWidth(70)
+        self.btn_toggle_password.clicked.connect(self._toggle_password_visibility)
+        self.btn_toggle_password.setStyleSheet("""
+            QPushButton {
+                border: 1px solid #CBD5E1;
+                border-radius: 6px;
+                background-color: #F8FAFC;
+                color: #073B6B;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #EAF4FF;
+            }
+        """)
+
+        password_row.addWidget(self.input_password)
+        password_row.addWidget(self.btn_toggle_password)
+        der_layout.addLayout(password_row)
         der_layout.addSpacing(20)
 
         self.lbl_error = QLabel("")
@@ -173,6 +199,19 @@ class LoginView(QWidget):
             self.lbl_rut_status.setStyleSheet(
                 "color: #9CA3AF; font-size: 11px;")
             self.lbl_rut_status.setText("Verificando dígito verificador…")
+
+    def _toggle_password_visibility(self) -> None:
+        """Alterna entre mostrar y ocultar la contraseña."""
+        self._password_visible = not self._password_visible
+
+        if self._password_visible:
+            self.input_password.setEchoMode(QLineEdit.Normal)
+            self.btn_toggle_password.setText("Ocultar")
+            self.btn_toggle_password.setToolTip("Ocultar contraseña")
+        else:
+            self.input_password.setEchoMode(QLineEdit.Password)
+            self.btn_toggle_password.setText("Ver")
+            self.btn_toggle_password.setToolTip("Mostrar contraseña")
 
     # ---- estado visual del botón ----
     def _activar_estado_ingresando(self) -> None:
