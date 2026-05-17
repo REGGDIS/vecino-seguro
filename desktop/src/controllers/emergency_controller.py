@@ -10,6 +10,7 @@ estado de los reportes.
 """
 
 from datetime import datetime
+from time import monotonic
 from typing import Optional
 
 from src.models.entities import (
@@ -55,6 +56,7 @@ DASHBOARD_STATUS_KEYS = {
     EstadoEmergencia.ATENDIDO: "atendido",
     EstadoEmergencia.RESUELTO: "resuelto",
 }
+DASHBOARD_CACHE_TTL_SECONDS = 5
 
 BACKEND_TYPE_BY_ENUM = {
     TipoEmergencia.ROBO: "robo",
@@ -101,6 +103,11 @@ class EmergencyController:
         self._api = api_client
         self.backend_error: str | None = None
         self._ultima_lista: list[Emergencia] = []
+        self._dashboard_summary_cache: dict[EstadoEmergencia, int] | None = None
+        self._dashboard_summary_cache_time: float | None = None
+        self._dashboard_recent_cache: list[Emergencia] | None = None
+        self._dashboard_recent_cache_time: float | None = None
+        self._dashboard_recent_cache_limit: int | None = None
 
     # ------------------------------------------------------------------
     # API base del stub original (firma compatible)
@@ -124,7 +131,9 @@ class EmergencyController:
             nombre_reportante=payload["nombre_reportante"],
             fecha_reporte=datetime.now(),
         )
-        return self._repo.save(nueva).to_dict()
+        guardada = self._repo.save(nueva)
+        self._invalidar_cache_dashboard()
+        return guardada.to_dict()
 
     # ------------------------------------------------------------------
     # API extendida para uso desde las vistas
@@ -243,11 +252,20 @@ class EmergencyController:
     def resumen_dashboard(self) -> dict[EstadoEmergencia, int]:
         """Obtiene contadores optimizados para el dashboard con fallback seguro."""
         self.backend_error = None
+        if (
+            self._dashboard_summary_cache is not None
+            and self._cache_dashboard_valida(self._dashboard_summary_cache_time)
+        ):
+            return dict(self._dashboard_summary_cache)
+
         if self._api is not None:
             datos = self._api.get_emergencies_summary()
             if isinstance(datos, dict):
                 try:
-                    return self._parsear_resumen_dashboard(datos)
+                    resumen = self._parsear_resumen_dashboard(datos)
+                    self._dashboard_summary_cache = dict(resumen)
+                    self._dashboard_summary_cache_time = monotonic()
+                    return resumen
                 except (TypeError, ValueError):
                     self.backend_error = (
                         "El backend respondió, pero no se pudo interpretar "
@@ -268,11 +286,21 @@ class EmergencyController:
     def emergencias_recientes(self, limit: int = 4) -> list[Emergencia]:
         """Obtiene reportes recientes optimizados para el dashboard."""
         safe_limit = max(1, min(limit, 20))
+        if (
+            self._dashboard_recent_cache is not None
+            and self._dashboard_recent_cache_limit == safe_limit
+            and self._cache_dashboard_valida(self._dashboard_recent_cache_time)
+        ):
+            return list(self._dashboard_recent_cache)
+
         if self._api is not None:
             datos = self._api.get_recent_emergencies(safe_limit)
             if datos is not None:
                 emergencias = self._parsear_emergencias(datos)
                 if emergencias or datos == []:
+                    self._dashboard_recent_cache = list(emergencias)
+                    self._dashboard_recent_cache_time = monotonic()
+                    self._dashboard_recent_cache_limit = safe_limit
                     self._actualizar_cache_recientes(emergencias)
                     return emergencias
 
@@ -303,6 +331,18 @@ class EmergencyController:
         for estado, key in DASHBOARD_STATUS_KEYS.items():
             stats[estado] = int(datos.get(key, 0) or 0)
         return stats
+
+    def _cache_dashboard_valida(self, cache_time: float | None) -> bool:
+        if cache_time is None:
+            return False
+        return monotonic() - cache_time <= DASHBOARD_CACHE_TTL_SECONDS
+
+    def _invalidar_cache_dashboard(self) -> None:
+        self._dashboard_summary_cache = None
+        self._dashboard_summary_cache_time = None
+        self._dashboard_recent_cache = None
+        self._dashboard_recent_cache_time = None
+        self._dashboard_recent_cache_limit = None
 
     def _actualizar_cache_recientes(self, emergencias: list[Emergencia]) -> None:
         ids_recientes = {emergencia.id for emergencia in emergencias}
@@ -361,6 +401,7 @@ class EmergencyController:
             try:
                 creada = self._api.create_emergency(payload)
                 emergencia = self._parsear_emergencia_backend(creada, usuario)
+                self._invalidar_cache_dashboard()
                 return True, f"Emergencia #{emergencia.id} registrada.", emergencia
             except ApiClientError as exc:
                 return False, exc.message, None
@@ -384,6 +425,7 @@ class EmergencyController:
             fecha_reporte=datetime.now(),
         )
         guardada = self._repo.save(nueva)
+        self._invalidar_cache_dashboard()
         return True, f"Emergencia #{guardada.id} registrada.", guardada
 
     def _catalogos_validos(self, catalogos: object) -> bool:
@@ -476,6 +518,7 @@ class EmergencyController:
                 )
                 emergencia = self._parsear_emergencia_backend(actualizada)
                 self._actualizar_cache(emergencia)
+                self._invalidar_cache_dashboard()
                 return True, f"Estado actualizado a '{estado_normalizado.value}'."
             except ApiClientError as exc:
                 return False, self._mensaje_api_error(exc)
@@ -494,4 +537,5 @@ class EmergencyController:
             emergencia.observaciones = observaciones
         self._repo.save(emergencia)
         self._actualizar_cache(emergencia)
+        self._invalidar_cache_dashboard()
         return True, f"Estado actualizado a '{estado_normalizado.value}'."
