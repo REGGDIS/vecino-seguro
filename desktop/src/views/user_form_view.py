@@ -69,6 +69,16 @@ class UserFormView(QWidget):
         fila_identidad.addLayout(col_rol)
         card_lay.addLayout(fila_identidad)
 
+        ayuda_roles = QLabel(
+            "Vecino: puede iniciar sesión, reportar emergencias y revisar el estado de sus reportes.\n"
+            "Administrador: puede gestionar reportes y registrar nuevos usuarios."
+        )
+        ayuda_roles.setWordWrap(True)
+        ayuda_roles.setStyleSheet(
+            "color: #52616B; font-size: 12px; background: transparent;"
+        )
+        card_lay.addWidget(ayuda_roles)
+
         card_lay.addWidget(self._lbl("Nombre completo *"))
         self.input_nombre = QLineEdit()
         self.input_nombre.setPlaceholderText("Ej: Nuevo Vecino")
@@ -86,8 +96,9 @@ class UserFormView(QWidget):
         card_lay.addWidget(self.input_password)
 
         nota = QLabel(
-            "La contraseña se envía al backend y se almacena como hash bcrypt. "
-            "No se muestra ni guarda en la aplicación desktop."
+            "La contraseña inicial será utilizada por el usuario para iniciar sesión. "
+            "Por seguridad, el sistema no la muestra ni la guarda en texto visible "
+            "dentro de la aplicación desktop."
         )
         nota.setStyleSheet(
             "background-color: #E5F0FB; color: #005A9C; "
@@ -136,10 +147,16 @@ class UserFormView(QWidget):
             )
             if ok:
                 nombre = creado.get("full_name", "Usuario") if creado else "Usuario"
+                rut = creado.get("rut", self.input_rut.text().strip()) if creado else self.input_rut.text().strip()
+                rol_id = int(self.cb_rol.currentData())
+                rol_texto = "Administrador" if rol_id == 1 else "Vecino"
                 QMessageBox.information(
                     self,
                     "Usuario creado",
-                    f"{nombre} fue registrado correctamente.",
+                    f"Usuario creado correctamente.\n\n"
+                    f"Nombre: {nombre}\n"
+                    f"RUT: {rut}\n"
+                    f"Rol: {rol_texto}",
                 )
                 self.limpiar()
             else:
