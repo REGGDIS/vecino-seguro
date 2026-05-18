@@ -148,6 +148,7 @@ Vecino123
 GET /health
 GET /api/v1/system/info
 POST /api/v1/auth/login
+GET /api/v1/users/
 POST /api/v1/users/
 GET /api/v1/emergencies/
 GET /api/v1/emergencies/summary
@@ -247,10 +248,56 @@ Body de prueba para vecino:
 
 ---
 
-# Registro básico de usuarios
+# Gestión básica de usuarios
 
-El módulo `users` permite crear usuarios reales desde el panel administrador
-desktop.
+El módulo `users` permite listar y crear usuarios reales desde el panel
+administrador desktop.
+
+## Listar usuarios
+
+Endpoint:
+
+```text
+GET /api/v1/users/
+```
+
+Devuelve usuarios reales desde MySQL/MariaDB con una respuesta segura. No
+incluye `password` ni `password_hash`.
+
+Ejemplo:
+
+```json
+[
+  {
+    "id": 1,
+    "rut": "11111111-1",
+    "full_name": "Administradora Vecinal",
+    "email": "admin@vecinoseguro.cl",
+    "role_id": 1,
+    "role": "admin"
+  },
+  {
+    "id": 2,
+    "rut": "22222222-2",
+    "full_name": "Carlos Pérez Soto",
+    "email": "carlos.perez@vecinoseguro.cl",
+    "role_id": 2,
+    "role": "vecino"
+  }
+]
+```
+
+Respuestas esperadas:
+
+* `200 OK`: listado obtenido correctamente.
+* `500 Internal Server Error`: error no controlado al consultar usuarios.
+
+Limitación temporal: este endpoint aún no exige token ni permisos backend. Por
+ahora el acceso se restringe desde la app desktop mostrando la vista solo a
+usuarios con rol administrador. La autorización backend avanzada queda para una
+etapa posterior.
+
+## Crear usuarios
 
 Endpoint:
 
@@ -590,16 +637,18 @@ Ejemplo de respuesta:
 2. Abrir `http://127.0.0.1:8000/health`.
 3. Abrir `http://127.0.0.1:8000/docs`.
 4. Probar login real con las credenciales de desarrollo.
-5. Probar `POST /api/v1/users/` con usuario vecino y administrador.
-6. Probar errores de RUT inválido, RUT duplicado, email duplicado y contraseña corta.
-7. Confirmar que la respuesta de usuarios no incluya `password_hash`.
-8. Probar `GET /api/v1/emergencies/`.
-9. Probar `GET /api/v1/emergencies/summary`.
-10. Probar `GET /api/v1/emergencies/recent?limit=4`.
-11. Probar `GET /api/v1/emergencies/catalogs`.
-12. Probar `GET /api/v1/reports/summary`.
-13. Probar `GET /api/v1/reports/dashboard-cards`.
-14. Verificar que las respuestas sean coherentes con los datos cargados desde `database/seed.sql`.
+5. Probar `GET /api/v1/users/` y confirmar que lista usuarios reales sin
+   `password_hash`.
+6. Probar `POST /api/v1/users/` con usuario vecino y administrador.
+7. Probar errores de RUT inválido, RUT duplicado, email duplicado y contraseña corta.
+8. Confirmar que la respuesta de creación no incluya `password_hash`.
+9. Probar `GET /api/v1/emergencies/`.
+10. Probar `GET /api/v1/emergencies/summary`.
+11. Probar `GET /api/v1/emergencies/recent?limit=4`.
+12. Probar `GET /api/v1/emergencies/catalogs`.
+13. Probar `GET /api/v1/reports/summary`.
+14. Probar `GET /api/v1/reports/dashboard-cards`.
+15. Verificar que las respuestas sean coherentes con los datos cargados desde `database/seed.sql`.
 
 ---
 

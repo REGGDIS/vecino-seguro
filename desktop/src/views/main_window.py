@@ -282,6 +282,7 @@ class MainWindow(QMainWindow):
         elif indice == self.PAG_USERS:
             self.btn_users.setChecked(True)
             self.lbl_titulo_pagina.setText("Registrar usuario")
+            self.user_form_view.refrescar()
 
     def _abrir_reporte_desde_dashboard(self, emergencia_id: int) -> None:
         self.ir_a(self.PAG_LIST)

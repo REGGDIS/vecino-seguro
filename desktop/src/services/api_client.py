@@ -50,6 +50,14 @@ class ApiClient:
         except ApiClientError:
             return None
 
+    def get_users(self) -> list[dict] | None:
+        """Obtiene usuarios registrados desde el backend."""
+        try:
+            data = self._request_json("GET", "/api/v1/users/")
+        except ApiClientError:
+            return None
+        return data if isinstance(data, list) else None
+
     def get_emergencies_summary(self) -> dict | None:
         """Obtiene contadores agregados para el dashboard."""
         try:

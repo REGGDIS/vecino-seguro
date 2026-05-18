@@ -58,7 +58,8 @@ datos reales del entorno local.
 - **Listado de emergencias** con filtro por estado y panel de detalle.
 - **Detalle del reporte** con cambio de estado y eliminación con confirmación
   disponibles solo para administradores.
-- **Registro básico de usuarios** visible solo para administradores.
+- **Gestión básica de usuarios** visible solo para administradores, con
+  creación de cuentas y listado de usuarios registrados.
 
 ## Integración con backend
 
@@ -102,6 +103,8 @@ El listado general de emergencias sigue usando:
 El formulario de usuarios usa el flujo `Vista → UserController → ApiClient →
 FastAPI` y consume:
 
+- `GET /api/v1/users/` para listar usuarios registrados en la tabla
+  administrativa.
 - `POST /api/v1/users/` para registrar usuarios reales con RUT, nombre, email,
   contraseña inicial y rol.
 
@@ -122,9 +125,29 @@ Después de un login exitoso, el desktop construye un `Usuario` local con el
 rol `role_id=1` se interpreta como administrador y `role_id=2` como vecino.
 
 Los administradores ven el acceso lateral **Usuarios** y pueden crear cuentas
-con rol **Vecino** (`role_id=2`) o **Administrador** (`role_id=1`). Los vecinos
-no ven ese acceso en la navegación normal. La contraseña inicial no se muestra
-ni se guarda en desktop; el backend la persiste como hash bcrypt.
+con rol **Vecino** (`role_id=2`) o **Administrador** (`role_id=1`). En la misma
+vista pueden consultar una tabla de usuarios registrados con ID, RUT, nombre,
+email y rol; después de crear un usuario, el listado se actualiza para mostrar
+el nuevo registro. Los vecinos no ven ese acceso en la navegación normal. La
+contraseña inicial no se muestra ni se guarda en desktop; el backend la persiste
+como hash bcrypt.
+
+Respuesta segura esperada desde `GET /api/v1/users/`:
+
+```json
+[
+  {
+    "id": 1,
+    "rut": "11111111-1",
+    "full_name": "Administradora Vecinal",
+    "email": "admin@vecinoseguro.cl",
+    "role_id": 1,
+    "role": "admin"
+  }
+]
+```
+
+El listado no expone `password` ni `password_hash`.
 
 Respuesta segura esperada desde `POST /api/v1/users/`:
 
