@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, status
 from app.modules.users.schemas import (
     UserCreateRequest,
     UserCreateResponse,
-    UserSummary,
+    UserListItem,
 )
 from app.modules.users.service import (
     InvalidRoleError,
@@ -18,10 +18,16 @@ router = APIRouter()
 user_service = UserService()
 
 
-@router.get("/", response_model=list[UserSummary])
-def list_users() -> list[UserSummary]:
-    """Ruta placeholder para listar usuarios en futuras iteraciones."""
-    return user_service.list_users()
+@router.get("/", response_model=list[UserListItem])
+def list_users() -> list[UserListItem]:
+    """Lista usuarios reales sin exponer contraseña ni hash."""
+    try:
+        return user_service.list_users()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="No fue posible obtener los usuarios",
+        ) from exc
 
 
 @router.post(

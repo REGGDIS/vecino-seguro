@@ -7,15 +7,39 @@ en MySQL para evitar que la lógica de base de datos se mezcle con rutas o servi
 from typing import Any
 
 from app.db.connection import get_connection
-from app.modules.users.schemas import UserCreateResponse, UserSummary
+from app.modules.users.schemas import UserCreateResponse, UserListItem
 
 
 class UserRepository:
     """Repositorio inicial para la entidad usuario."""
 
-    def list_users(self) -> list[UserSummary]:
-        """Placeholder sin datos persistentes todavía."""
-        return []
+    def list_users(self) -> list[UserListItem]:
+        """Lista usuarios reales con su rol, sin exponer credenciales."""
+        query = """
+            SELECT
+                u.id,
+                u.rut,
+                u.full_name,
+                u.email,
+                u.role_id,
+                r.name AS role
+            FROM users u
+            INNER JOIN roles r ON r.id = u.role_id
+            ORDER BY u.id ASC
+        """
+        connection = None
+        cursor = None
+        try:
+            connection = get_connection()
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            return [UserListItem(**row) for row in rows]
+        finally:
+            if cursor is not None:
+                cursor.close()
+            if connection is not None:
+                connection.close()
 
     def find_by_rut(self, rut: str) -> dict[str, Any] | None:
         """Busca un usuario por RUT normalizado."""

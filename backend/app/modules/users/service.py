@@ -7,7 +7,7 @@ from app.modules.users.repository import UserRepository
 from app.modules.users.schemas import (
     UserCreateRequest,
     UserCreateResponse,
-    UserSummary,
+    UserListItem,
 )
 from app.shared.validators.rut_validator import normalize_rut, validate_rut
 
@@ -34,8 +34,8 @@ class UserService:
     def __init__(self) -> None:
         self.repository = UserRepository()
 
-    def list_users(self) -> list[UserSummary]:
-        """Retorna una lista vacía hasta conectar persistencia real."""
+    def list_users(self) -> list[UserListItem]:
+        """Retorna usuarios reales disponibles para el panel administrador."""
         return self.repository.list_users()
 
     def create_user(self, request: UserCreateRequest) -> UserCreateResponse:

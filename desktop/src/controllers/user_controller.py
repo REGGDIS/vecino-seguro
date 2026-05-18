@@ -56,6 +56,13 @@ class UserController:
         except ApiClientError as exc:
             return False, self._mensaje_api_error(exc), None
 
+    def listar_usuarios(self) -> tuple[bool, str, list[dict]]:
+        """Obtiene usuarios reales para el listado administrador."""
+        usuarios = self._api.get_users()
+        if not isinstance(usuarios, list):
+            return False, "No fue posible cargar el listado de usuarios.", []
+        return True, "", usuarios
+
     def _mensaje_api_error(self, exc: ApiClientError) -> str:
         if isinstance(exc.detail, str) and exc.detail:
             return exc.detail

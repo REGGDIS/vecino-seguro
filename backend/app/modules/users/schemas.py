@@ -12,6 +12,17 @@ class UserSummary(BaseModel):
     role: str
 
 
+class UserListItem(BaseModel):
+    """Datos seguros de usuario para listados administrativos."""
+
+    id: int
+    rut: str
+    full_name: str
+    email: str
+    role_id: int
+    role: str
+
+
 class UserCreateRequest(BaseModel):
     """Datos requeridos para registrar un usuario real."""
 
