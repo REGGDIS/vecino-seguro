@@ -322,13 +322,45 @@ class EmergencyListView(QWidget):
 
         # Mantener selección si el id sigue presente
         if self._emergencia_seleccionada_id is not None:
-            for r in range(self.tabla.rowCount()):
-                item = self.tabla.item(r, 0)
-                if item and item.data(Qt.UserRole) == self._emergencia_seleccionada_id:
-                    self.tabla.selectRow(r)
-                    return
+            if self._seleccionar_fila_por_id(self._emergencia_seleccionada_id):
+                return
         self._emergencia_seleccionada_id = None
         self.detalle_stack.setCurrentIndex(0)
+
+    def seleccionar_reporte(self, emergencia_id: int) -> bool:
+        if self.cb_filtro.currentData() is not None:
+            self.cb_filtro.blockSignals(True)
+            self.cb_filtro.setCurrentIndex(0)
+            self.cb_filtro.blockSignals(False)
+
+        self.refrescar()
+        if not self._seleccionar_fila_por_id(emergencia_id, emitir_senial=False):
+            self._emergencia_seleccionada_id = None
+            self.tabla.clearSelection()
+            self.detalle_stack.setCurrentIndex(0)
+            return False
+
+        self._emergencia_seleccionada_id = emergencia_id
+        self._mostrar_detalle(emergencia_id)
+        return True
+
+    def _seleccionar_fila_por_id(
+        self,
+        emergencia_id: int,
+        *,
+        emitir_senial: bool = True,
+    ) -> bool:
+        for row in range(self.tabla.rowCount()):
+            item = self.tabla.item(row, 0)
+            if item and item.data(Qt.UserRole) == emergencia_id:
+                if not emitir_senial:
+                    senales_bloqueadas = self.tabla.blockSignals(True)
+                    self.tabla.selectRow(row)
+                    self.tabla.blockSignals(senales_bloqueadas)
+                    return True
+                self.tabla.selectRow(row)
+                return True
+        return False
 
     def _set_cell(self, row, col, texto, align=Qt.AlignLeft | Qt.AlignVCenter,
                   color: str | None = None, weight: int = 400, data=None) -> None:

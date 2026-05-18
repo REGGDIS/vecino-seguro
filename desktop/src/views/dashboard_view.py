@@ -50,6 +50,7 @@ class DashboardView(QWidget):
 
     ir_a_registrar = Signal()
     ir_a_listado = Signal()
+    ir_a_reporte = Signal(int)
 
     def __init__(self, emergency_controller: EmergencyController) -> None:
         super().__init__()
@@ -351,6 +352,14 @@ class DashboardView(QWidget):
         f = QFrame()
         f.setObjectName("recentRow")
         f.setMinimumHeight(94)
+        f.setCursor(Qt.PointingHandCursor)
+        f.setToolTip("Abrir detalle del reporte")
+        emergencia_id = emergencia.id
+
+        def abrir_detalle(event, reporte_id=emergencia_id) -> None:
+            self.ir_a_reporte.emit(reporte_id)
+
+        f.mousePressEvent = abrir_detalle
 
         l = QHBoxLayout(f)
         l.setContentsMargins(16, 12, 16, 12)
