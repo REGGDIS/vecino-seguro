@@ -204,6 +204,7 @@ class MainWindow(QMainWindow):
         # Conexiones entre vistas
         self.dashboard.ir_a_registrar.connect(lambda: self.ir_a(self.PAG_FORM))
         self.dashboard.ir_a_listado.connect(lambda: self.ir_a(self.PAG_LIST))
+        self.dashboard.ir_a_reporte.connect(self._abrir_reporte_desde_dashboard)
         self.form_view.cancelado.connect(lambda: self.ir_a(self.PAG_DASH))
         self.form_view.emergencia_registrada.connect(
             lambda: self.ir_a(self.PAG_LIST)
@@ -281,6 +282,10 @@ class MainWindow(QMainWindow):
         elif indice == self.PAG_USERS:
             self.btn_users.setChecked(True)
             self.lbl_titulo_pagina.setText("Registrar usuario")
+
+    def _abrir_reporte_desde_dashboard(self, emergencia_id: int) -> None:
+        self.ir_a(self.PAG_LIST)
+        self.list_view.seleccionar_reporte(emergencia_id)
 
     def _cerrar_sesion(self) -> None:
         self.dashboard.detener_carga()

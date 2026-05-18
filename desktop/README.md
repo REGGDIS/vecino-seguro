@@ -52,6 +52,8 @@ datos reales del entorno local.
 - **Login** conectado al backend real, con validación de RUT (módulo 11) y
   mensajes de error claros.
 - **Dashboard** con KPIs por estado, accesos rápidos y reportes recientes.
+- Las tarjetas de reportes recientes del dashboard abren directamente el
+  detalle del reporte en la pantalla **Reportes**.
 - **Formulario de registro de emergencia** con validaciones de negocio.
 - **Listado de emergencias** con filtro por estado y panel de detalle.
 - **Detalle del reporte** con cambio de estado y eliminación con confirmación
