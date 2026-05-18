@@ -59,8 +59,8 @@ datos reales del entorno local.
 - **Detalle del reporte** con cambio de estado y eliminación con confirmación
   disponibles solo para administradores.
 - **Gestión básica de usuarios** visible solo para administradores, con
-  creación de cuentas, listado de usuarios registrados y edición de nombre,
-  email y rol.
+  creación de cuentas, listado de usuarios registrados, edición de nombre,
+  email y rol, y activación/desactivación sin eliminar registros.
 
 ## Integración con backend
 
@@ -110,6 +110,8 @@ FastAPI` y consume:
   contraseña inicial y rol.
 - `PATCH /api/v1/users/{user_id}` para editar nombre, email y rol de usuarios
   existentes.
+- `PATCH /api/v1/users/{user_id}/active` para activar o desactivar usuarios
+  sin eliminarlos.
 
 El desktop no envía `status`; el backend asigna el estado inicial
 `pendiente`.
@@ -130,12 +132,14 @@ rol `role_id=1` se interpreta como administrador y `role_id=2` como vecino.
 Los administradores ven el acceso lateral **Usuarios** y pueden crear cuentas
 con rol **Vecino** (`role_id=2`) o **Administrador** (`role_id=1`). En la misma
 vista pueden consultar una tabla de usuarios registrados con ID, RUT, nombre,
-email y rol; después de crear un usuario, el listado se actualiza para mostrar
-el nuevo registro. Al seleccionar una fila, pueden editar nombre completo,
-email y rol desde una sección separada. No se edita RUT, no se cambia
-contraseña y no se eliminan usuarios desde esta vista. Los vecinos no ven ese
-acceso en la navegación normal. La contraseña inicial no se muestra ni se guarda
-en desktop; el backend la persiste como hash bcrypt.
+email, rol y estado Activo/Inactivo; después de crear un usuario, el listado se
+actualiza para mostrar el nuevo registro. Al seleccionar una fila, pueden editar
+nombre completo, email y rol desde una sección separada, y activar o desactivar
+el usuario con confirmación. No se edita RUT, no se cambia contraseña y no se
+eliminan usuarios desde esta vista. Desactivar conserva reportes asociados e
+historial, pero impide el inicio de sesión. Los vecinos no ven ese acceso en la
+navegación normal. La contraseña inicial no se muestra ni se guarda en desktop;
+el backend la persiste como hash bcrypt.
 
 Respuesta segura esperada desde `GET /api/v1/users/`:
 
@@ -147,7 +151,8 @@ Respuesta segura esperada desde `GET /api/v1/users/`:
     "full_name": "Administradora Vecinal",
     "email": "admin@vecinoseguro.cl",
     "role_id": 1,
-    "role": "admin"
+    "role": "admin",
+    "is_active": true
   }
 ]
 ```
@@ -163,11 +168,29 @@ Respuesta segura esperada desde `PATCH /api/v1/users/{user_id}`:
   "full_name": "Usuario Editado",
   "email": "usuario.editado@vecinoseguro.cl",
   "role_id": 2,
-  "role": "vecino"
+  "role": "vecino",
+  "is_active": true
 }
 ```
 
 La edición básica no expone contraseñas ni hashes.
+
+Respuesta segura esperada desde `PATCH /api/v1/users/{user_id}/active`:
+
+```json
+{
+  "id": 4,
+  "rut": "12345678-5",
+  "full_name": "Nuevo Vecino",
+  "email": "nuevo.vecino@vecinoseguro.cl",
+  "role_id": 2,
+  "role": "vecino",
+  "is_active": false
+}
+```
+
+El desktop bloquea la autodesactivación del administrador que está usando la
+sesión. El backend, además, impide dejar el sistema sin administradores activos.
 
 Respuesta segura esperada desde `POST /api/v1/users/`:
 
@@ -177,7 +200,8 @@ Respuesta segura esperada desde `POST /api/v1/users/`:
   "rut": "12345678-5",
   "full_name": "Nuevo Vecino",
   "email": "nuevo.vecino@vecinoseguro.cl",
-  "role_id": 2
+  "role_id": 2,
+  "is_active": true
 }
 ```
 

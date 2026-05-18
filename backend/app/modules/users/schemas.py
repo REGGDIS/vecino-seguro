@@ -21,6 +21,7 @@ class UserListItem(BaseModel):
     email: str
     role_id: int
     role: str
+    is_active: bool
 
 
 class UserCreateRequest(BaseModel):
@@ -41,6 +42,12 @@ class UserUpdateRequest(BaseModel):
     role_id: int
 
 
+class UserActiveUpdateRequest(BaseModel):
+    """Estado activo/inactivo de un usuario."""
+
+    is_active: bool
+
+
 class UserCreateResponse(BaseModel):
     """Respuesta segura para altas de usuario, sin contraseña ni hash."""
 
@@ -49,3 +56,4 @@ class UserCreateResponse(BaseModel):
     full_name: str
     email: str
     role_id: int
+    is_active: bool = True

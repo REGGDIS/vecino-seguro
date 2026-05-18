@@ -81,7 +81,22 @@ Pasos:
 
 Los datos cargados desde `seed.sql` permiten probar login, emergencias y reportes locales.
 
-No modificar `database/schema.sql` ni `database/seed.sql` desde tareas de documentación.
+## Actualización de bases locales existentes
+
+Si la base local ya fue creada antes de agregar estados activo/inactivo de
+usuarios, ejecutar manualmente:
+
+```sql
+ALTER TABLE users
+ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1
+COMMENT 'Indica si el usuario puede iniciar sesión'
+AFTER role_id;
+
+CREATE INDEX idx_users_is_active ON users(is_active);
+```
+
+Si se reconstruye la base desde cero, basta con ejecutar `database/schema.sql`
+y luego `database/seed.sql` actualizados.
 
 ---
 
@@ -151,6 +166,7 @@ POST /api/v1/auth/login
 GET /api/v1/users/
 POST /api/v1/users/
 PATCH /api/v1/users/{user_id}
+PATCH /api/v1/users/{user_id}/active
 GET /api/v1/emergencies/
 GET /api/v1/emergencies/summary
 GET /api/v1/emergencies/recent?limit=4
@@ -251,8 +267,9 @@ Body de prueba para vecino:
 
 # Gestión básica de usuarios
 
-El módulo `users` permite listar, crear y editar usuarios reales desde el panel
-administrador desktop.
+El módulo `users` permite listar, crear, editar y activar/desactivar usuarios
+reales desde el panel administrador desktop. Los usuarios inactivos se conservan
+en la base de datos, pero no pueden iniciar sesión.
 
 ## Listar usuarios
 
@@ -275,7 +292,8 @@ Ejemplo:
     "full_name": "Administradora Vecinal",
     "email": "admin@vecinoseguro.cl",
     "role_id": 1,
-    "role": "admin"
+    "role": "admin",
+    "is_active": true
   },
   {
     "id": 2,
@@ -283,7 +301,8 @@ Ejemplo:
     "full_name": "Carlos Pérez Soto",
     "email": "carlos.perez@vecinoseguro.cl",
     "role_id": 2,
-    "role": "vecino"
+    "role": "vecino",
+    "is_active": true
   }
 ]
 ```
@@ -331,7 +350,8 @@ Respuesta segura:
   "rut": "12345678-5",
   "full_name": "Nuevo Vecino",
   "email": "nuevo.vecino@vecinoseguro.cl",
-  "role_id": 2
+  "role_id": 2,
+  "is_active": true
 }
 ```
 
@@ -386,7 +406,8 @@ Respuesta segura:
   "full_name": "Nombre Actualizado",
   "email": "correo.actualizado@vecinoseguro.cl",
   "role_id": 2,
-  "role": "vecino"
+  "role": "vecino",
+  "is_active": true
 }
 ```
 
@@ -402,6 +423,59 @@ Limitación temporal: este endpoint aún no exige token ni permisos backend. Por
 ahora el acceso se restringe desde la app desktop mostrando la vista solo a
 usuarios con rol administrador. La autorización backend avanzada queda para una
 etapa posterior.
+
+## Activar o desactivar usuarios
+
+Endpoint:
+
+```text
+PATCH /api/v1/users/{user_id}/active
+```
+
+Permite marcar un usuario como activo o inactivo sin eliminarlo. Un usuario
+inactivo conserva su RUT, datos, rol y relaciones históricas con reportes, pero
+no puede iniciar sesión.
+
+Body para desactivar:
+
+```json
+{
+  "is_active": false
+}
+```
+
+Body para activar:
+
+```json
+{
+  "is_active": true
+}
+```
+
+Respuesta segura:
+
+```json
+{
+  "id": 4,
+  "rut": "12345678-5",
+  "full_name": "Usuario Prueba",
+  "email": "usuario.prueba@vecinoseguro.cl",
+  "role_id": 2,
+  "role": "vecino",
+  "is_active": false
+}
+```
+
+Respuestas esperadas:
+
+* `200 OK`: estado actualizado.
+* `400 Bad Request`: ID inválido o intento de desactivar el último administrador activo.
+* `404 Not Found`: usuario inexistente.
+* `500 Internal Server Error`: error no controlado.
+
+El backend impide dejar el sistema sin administradores activos. La restricción
+de no desactivar la cuenta propia se aplica desde desktop mientras no exista
+autorización backend con token.
 
 ---
 
@@ -699,13 +773,16 @@ Ejemplo de respuesta:
 9. Probar `PATCH /api/v1/users/{user_id}` con nombre, email y rol válidos.
 10. Probar errores de usuario inexistente, email duplicado y rol inválido.
 11. Confirmar que la respuesta de edición no incluya `password_hash`.
-12. Probar `GET /api/v1/emergencies/`.
-13. Probar `GET /api/v1/emergencies/summary`.
-14. Probar `GET /api/v1/emergencies/recent?limit=4`.
-15. Probar `GET /api/v1/emergencies/catalogs`.
-16. Probar `GET /api/v1/reports/summary`.
-17. Probar `GET /api/v1/reports/dashboard-cards`.
-18. Verificar que las respuestas sean coherentes con los datos cargados desde `database/seed.sql`.
+12. Probar `PATCH /api/v1/users/{user_id}/active` para desactivar y activar usuarios.
+13. Confirmar que un usuario inactivo no puede iniciar sesión.
+14. Confirmar que no se puede desactivar el último administrador activo.
+15. Probar `GET /api/v1/emergencies/`.
+16. Probar `GET /api/v1/emergencies/summary`.
+17. Probar `GET /api/v1/emergencies/recent?limit=4`.
+18. Probar `GET /api/v1/emergencies/catalogs`.
+19. Probar `GET /api/v1/reports/summary`.
+20. Probar `GET /api/v1/reports/dashboard-cards`.
+21. Verificar que las respuestas sean coherentes con los datos cargados desde `database/seed.sql`.
 
 ---
 

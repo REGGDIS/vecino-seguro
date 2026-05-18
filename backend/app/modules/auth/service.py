@@ -39,6 +39,9 @@ class AuthService:
         if user is None:
             raise InvalidCredentialsError
 
+        if not bool(user.get("is_active", True)):
+            raise InvalidCredentialsError
+
         password_hash = user.get("password_hash")
         if not password_hash:
             raise InvalidCredentialsError

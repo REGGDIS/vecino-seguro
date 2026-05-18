@@ -22,7 +22,8 @@ class UserRepository:
                 u.full_name,
                 u.email,
                 u.role_id,
-                r.name AS role
+                r.name AS role,
+                u.is_active
             FROM users u
             INNER JOIN roles r ON r.id = u.role_id
             ORDER BY u.id ASC
@@ -50,7 +51,8 @@ class UserRepository:
                 full_name,
                 email,
                 password_hash,
-                role_id
+                role_id,
+                is_active
             FROM users
             WHERE rut = %s
             LIMIT 1
@@ -77,7 +79,8 @@ class UserRepository:
                 full_name,
                 email,
                 password_hash,
-                role_id
+                role_id,
+                is_active
             FROM users
             WHERE email = %s
             LIMIT 1
@@ -103,7 +106,8 @@ class UserRepository:
                 rut,
                 full_name,
                 email,
-                role_id
+                role_id,
+                is_active
             FROM users
             WHERE id = %s
             LIMIT 1
@@ -133,7 +137,8 @@ class UserRepository:
                 rut,
                 full_name,
                 email,
-                role_id
+                role_id,
+                is_active
             FROM users
             WHERE email = %s
               AND id <> %s
@@ -168,6 +173,28 @@ class UserRepository:
             if connection is not None:
                 connection.close()
 
+    def count_active_admins(self) -> int:
+        """Cuenta administradores activos para proteger acceso al sistema."""
+        query = """
+            SELECT COUNT(*) AS total
+            FROM users
+            WHERE role_id = 1
+              AND is_active = 1
+        """
+        connection = None
+        cursor = None
+        try:
+            connection = get_connection()
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(query)
+            row = cursor.fetchone()
+            return int(row["total"]) if row else 0
+        finally:
+            if cursor is not None:
+                cursor.close()
+            if connection is not None:
+                connection.close()
+
     def create_user(
         self,
         rut: str,
@@ -193,7 +220,8 @@ class UserRepository:
                 rut,
                 full_name,
                 email,
-                role_id
+                role_id,
+                is_active
             FROM users
             WHERE id = %s
             LIMIT 1
@@ -215,6 +243,54 @@ class UserRepository:
                 raise RuntimeError("No fue posible recuperar el usuario creado")
 
             return UserCreateResponse(**row)
+        except Exception:
+            try:
+                connection.rollback()
+            except Exception:
+                pass
+            raise
+        finally:
+            if cursor is not None:
+                cursor.close()
+            connection.close()
+
+    def update_active_status(
+        self,
+        user_id: int,
+        is_active: bool,
+    ) -> UserListItem | None:
+        """Actualiza el estado activo/inactivo y retorna el usuario seguro."""
+        update_query = """
+            UPDATE users
+            SET is_active = %s
+            WHERE id = %s
+        """
+        select_query = """
+            SELECT
+                u.id,
+                u.rut,
+                u.full_name,
+                u.email,
+                u.role_id,
+                r.name AS role,
+                u.is_active
+            FROM users u
+            INNER JOIN roles r ON r.id = u.role_id
+            WHERE u.id = %s
+            LIMIT 1
+        """
+        connection = get_connection()
+        cursor = None
+        try:
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute(update_query, (1 if is_active else 0, user_id))
+            connection.commit()
+
+            cursor.execute(select_query, (user_id,))
+            row = cursor.fetchone()
+            if row is None:
+                return None
+            return UserListItem(**row)
         except Exception:
             try:
                 connection.rollback()
@@ -248,7 +324,8 @@ class UserRepository:
                 u.full_name,
                 u.email,
                 u.role_id,
-                r.name AS role
+                r.name AS role,
+                u.is_active
             FROM users u
             INNER JOIN roles r ON r.id = u.role_id
             WHERE u.id = %s

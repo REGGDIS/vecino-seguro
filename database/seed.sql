@@ -28,26 +28,30 @@ ON DUPLICATE KEY UPDATE description = VALUES(description);
 --      maria.gonzalez@vecinoseguro.cl -> vecino1234
 --    password_hash contiene hashes bcrypt válidos. NO usar en producción.
 -- -----------------------------------------------------------------------------
-INSERT INTO users (rut, full_name, email, password_hash, role_id)
+INSERT INTO users (rut, full_name, email, password_hash, role_id, is_active)
 VALUES
   ('11111111-1',
    'Administradora Vecinal',
    'admin@vecinoseguro.cl',
    '$2b$12$abcdefghijklmnopqrstuuQGuv7JMXhF88lMrtF64dVMmrFWSg9Hy',
+   1,
    1),
   ('22222222-2',
    'Carlos Pérez Soto',
    'carlos.perez@vecinoseguro.cl',
    '$2b$12$abcdefghijklmnopqrstuut5sNDb4knLOg6.NM2MEDpS74Bo24SPG',
-   2),
+   2,
+   1),
   ('13456789-9',
    'María González Rojas',
    'maria.gonzalez@vecinoseguro.cl',
    '$2b$12$abcdefghijklmnopqrstuut5sNDb4knLOg6.NM2MEDpS74Bo24SPG',
-   2)
+   2,
+   1)
 ON DUPLICATE KEY UPDATE
   full_name = VALUES(full_name),
-  password_hash = VALUES(password_hash);
+  password_hash = VALUES(password_hash),
+  is_active = VALUES(is_active);
 
 -- -----------------------------------------------------------------------------
 -- 3. Emergencias de ejemplo

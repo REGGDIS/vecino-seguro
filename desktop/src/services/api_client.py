@@ -103,6 +103,14 @@ class ApiClient:
             json=payload,
         )
 
+    def update_user_active_status(self, user_id: int, is_active: bool) -> dict:
+        """Activa o desactiva un usuario real en el backend."""
+        return self._request_json(
+            "PATCH",
+            f"/api/v1/users/{user_id}/active",
+            json={"is_active": is_active},
+        )
+
     def update_emergency_status(self, emergency_id: int, payload: dict) -> dict:
         """Actualiza el estado de una emergencia real en el backend."""
         return self._request_json(

@@ -96,6 +96,22 @@ class UserController:
         except ApiClientError as exc:
             return False, self._mensaje_edicion_error(exc), None
 
+    def cambiar_estado_usuario(
+        self,
+        user_id: int,
+        is_active: bool,
+    ) -> tuple[bool, str, dict | None]:
+        """Solicita activar o desactivar un usuario existente."""
+        if user_id <= 0:
+            return False, "Debe seleccionar un usuario válido.", None
+
+        try:
+            actualizado = self._api.update_user_active_status(user_id, is_active)
+            estado = "activado" if is_active else "desactivado"
+            return True, f"Usuario {estado} correctamente.", actualizado
+        except ApiClientError as exc:
+            return False, self._mensaje_estado_error(exc), None
+
     def _mensaje_api_error(self, exc: ApiClientError) -> str:
         if isinstance(exc.detail, str) and exc.detail:
             return exc.detail
@@ -110,4 +126,13 @@ class UserController:
             return "Usuario no encontrado."
         if exc.status_code == 409:
             return "Ya existe otro usuario con ese email."
+        return exc.message
+
+    def _mensaje_estado_error(self, exc: ApiClientError) -> str:
+        if isinstance(exc.detail, str) and exc.detail:
+            return exc.detail
+        if exc.status_code == 404:
+            return "Usuario no encontrado."
+        if exc.status_code == 400:
+            return "No fue posible cambiar el estado del usuario."
         return exc.message
