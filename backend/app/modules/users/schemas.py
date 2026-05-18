@@ -33,6 +33,14 @@ class UserCreateRequest(BaseModel):
     role_id: int
 
 
+class UserUpdateRequest(BaseModel):
+    """Datos editables de un usuario existente."""
+
+    full_name: str = Field(...)
+    email: str = Field(...)
+    role_id: int
+
+
 class UserCreateResponse(BaseModel):
     """Respuesta segura para altas de usuario, sin contraseña ni hash."""
 

@@ -6,11 +6,13 @@ from app.modules.users.schemas import (
     UserCreateRequest,
     UserCreateResponse,
     UserListItem,
+    UserUpdateRequest,
 )
 from app.modules.users.service import (
     InvalidRoleError,
     InvalidUserDataError,
     UserAlreadyExistsError,
+    UserNotFoundError,
     UserService,
 )
 
@@ -47,4 +49,22 @@ def create_user(user_data: UserCreateRequest) -> UserCreateResponse:
         raise HTTPException(
             status_code=500,
             detail="No fue posible crear el usuario",
+        ) from exc
+
+
+@router.patch("/{user_id}", response_model=UserListItem)
+def update_user(user_id: int, user_data: UserUpdateRequest) -> UserListItem:
+    """Actualiza nombre, email y rol de un usuario existente."""
+    try:
+        return user_service.update_user(user_id, user_data)
+    except (InvalidUserDataError, InvalidRoleError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except UserNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except UserAlreadyExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="No fue posible actualizar el usuario",
         ) from exc

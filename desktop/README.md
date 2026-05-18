@@ -59,7 +59,8 @@ datos reales del entorno local.
 - **Detalle del reporte** con cambio de estado y eliminación con confirmación
   disponibles solo para administradores.
 - **Gestión básica de usuarios** visible solo para administradores, con
-  creación de cuentas y listado de usuarios registrados.
+  creación de cuentas, listado de usuarios registrados y edición de nombre,
+  email y rol.
 
 ## Integración con backend
 
@@ -107,6 +108,8 @@ FastAPI` y consume:
   administrativa.
 - `POST /api/v1/users/` para registrar usuarios reales con RUT, nombre, email,
   contraseña inicial y rol.
+- `PATCH /api/v1/users/{user_id}` para editar nombre, email y rol de usuarios
+  existentes.
 
 El desktop no envía `status`; el backend asigna el estado inicial
 `pendiente`.
@@ -128,9 +131,11 @@ Los administradores ven el acceso lateral **Usuarios** y pueden crear cuentas
 con rol **Vecino** (`role_id=2`) o **Administrador** (`role_id=1`). En la misma
 vista pueden consultar una tabla de usuarios registrados con ID, RUT, nombre,
 email y rol; después de crear un usuario, el listado se actualiza para mostrar
-el nuevo registro. Los vecinos no ven ese acceso en la navegación normal. La
-contraseña inicial no se muestra ni se guarda en desktop; el backend la persiste
-como hash bcrypt.
+el nuevo registro. Al seleccionar una fila, pueden editar nombre completo,
+email y rol desde una sección separada. No se edita RUT, no se cambia
+contraseña y no se eliminan usuarios desde esta vista. Los vecinos no ven ese
+acceso en la navegación normal. La contraseña inicial no se muestra ni se guarda
+en desktop; el backend la persiste como hash bcrypt.
 
 Respuesta segura esperada desde `GET /api/v1/users/`:
 
@@ -148,6 +153,21 @@ Respuesta segura esperada desde `GET /api/v1/users/`:
 ```
 
 El listado no expone `password` ni `password_hash`.
+
+Respuesta segura esperada desde `PATCH /api/v1/users/{user_id}`:
+
+```json
+{
+  "id": 4,
+  "rut": "12345678-5",
+  "full_name": "Usuario Editado",
+  "email": "usuario.editado@vecinoseguro.cl",
+  "role_id": 2,
+  "role": "vecino"
+}
+```
+
+La edición básica no expone contraseñas ni hashes.
 
 Respuesta segura esperada desde `POST /api/v1/users/`:
 
