@@ -19,6 +19,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont
 
 from src.controllers.user_controller import UserController
+from src.models.entities import Usuario
 from src.widgets.buttons import estilizar_boton
 
 
@@ -30,6 +31,8 @@ class UserFormView(QWidget):
         self._controller = controller or UserController()
         self._usuarios: list[dict] = []
         self._usuario_editando_id: int | None = None
+        self._usuario_editando_activo = True
+        self._usuario_actual: Usuario | None = None
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -179,9 +182,9 @@ class UserFormView(QWidget):
         table_card_lay.addWidget(self.lbl_estado_listado)
 
         self.tabla_usuarios = QTableWidget()
-        self.tabla_usuarios.setColumnCount(5)
+        self.tabla_usuarios.setColumnCount(6)
         self.tabla_usuarios.setHorizontalHeaderLabels(
-            ["ID", "RUT", "Nombre", "Email", "Rol"]
+            ["ID", "RUT", "Nombre", "Email", "Rol", "Estado"]
         )
         self.tabla_usuarios.verticalHeader().setVisible(False)
         self.tabla_usuarios.setSelectionBehavior(QTableWidget.SelectRows)
@@ -195,6 +198,7 @@ class UserFormView(QWidget):
         header.setSectionResizeMode(2, QHeaderView.Stretch)
         header.setSectionResizeMode(3, QHeaderView.Stretch)
         header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
         self.tabla_usuarios.setMinimumHeight(240)
         table_card_lay.addWidget(self.tabla_usuarios)
         outer.addWidget(table_card)
@@ -263,8 +267,22 @@ class UserFormView(QWidget):
         campo_edit_rol.addWidget(self.cb_edit_rol)
         edit_lay.addLayout(campo_edit_rol)
 
+        estado_row = QHBoxLayout()
+        estado_row.setSpacing(10)
+        estado_row.addWidget(self._lbl("Estado actual"))
+        self.lbl_edit_estado = QLabel("—")
+        self.lbl_edit_estado.setStyleSheet("color: #52616B; font-size: 13px;")
+        estado_row.addWidget(self.lbl_edit_estado)
+        estado_row.addStretch()
+        edit_lay.addLayout(estado_row)
+
         edit_buttons = QHBoxLayout()
         edit_buttons.addStretch()
+        self.btn_estado_usuario = QPushButton("Desactivar usuario")
+        estilizar_boton(self.btn_estado_usuario, "danger")
+        self.btn_estado_usuario.clicked.connect(self._cambiar_estado_usuario)
+        edit_buttons.addWidget(self.btn_estado_usuario)
+
         self.btn_cancelar_edicion = QPushButton("Cancelar edición")
         estilizar_boton(self.btn_cancelar_edicion, "secondary")
         self.btn_cancelar_edicion.clicked.connect(self._cancelar_edicion)
@@ -294,6 +312,10 @@ class UserFormView(QWidget):
         self.input_email.clear()
         self.input_password.clear()
         self.cb_rol.setCurrentIndex(0)
+
+    def set_usuario(self, usuario: Usuario) -> None:
+        """Recibe el usuario autenticado para evitar autodesactivación."""
+        self._usuario_actual = usuario
 
     def refrescar(self, seleccionar_usuario_id: int | None = None) -> None:
         self.btn_refrescar.setEnabled(False)
@@ -348,6 +370,15 @@ class UserFormView(QWidget):
                 4,
                 self._nombre_rol(usuario.get("role")),
                 align=Qt.AlignCenter,
+                weight=600,
+            )
+            activo = self._usuario_activo(usuario)
+            self._set_cell(
+                row,
+                5,
+                "Activo" if activo else "Inactivo",
+                align=Qt.AlignCenter,
+                color="#16812C" if activo else "#D92D20",
                 weight=600,
             )
             self.tabla_usuarios.setRowHeight(row, 38)
@@ -425,12 +456,16 @@ class UserFormView(QWidget):
         self.lbl_estado_edicion.setText(
             "Puedes editar nombre completo, email y rol. El ID y RUT son solo referencia."
         )
+        self._usuario_editando_activo = self._usuario_activo(usuario)
         self._set_edicion_habilitada(True)
+        self._actualizar_estado_edicion()
 
     def _limpiar_edicion(self) -> None:
         self._usuario_editando_id = None
+        self._usuario_editando_activo = True
         self.lbl_edit_id.setText("—")
         self.lbl_edit_rut.setText("—")
+        self.lbl_edit_estado.setText("—")
         self.input_edit_nombre.clear()
         self.input_edit_email.clear()
         self.cb_edit_rol.setCurrentIndex(0)
@@ -445,6 +480,8 @@ class UserFormView(QWidget):
         self.cb_edit_rol.setEnabled(habilitada)
         self.btn_guardar_edicion.setEnabled(habilitada)
         self.btn_cancelar_edicion.setEnabled(habilitada)
+        if not habilitada:
+            self.btn_estado_usuario.setEnabled(False)
 
     def _cancelar_edicion(self) -> None:
         senales_bloqueadas = self.tabla_usuarios.blockSignals(True)
@@ -490,6 +527,62 @@ class UserFormView(QWidget):
             self.btn_guardar_edicion.setText("Guardar cambios")
             self.btn_guardar_edicion.setEnabled(self._usuario_editando_id is not None)
 
+    def _cambiar_estado_usuario(self) -> None:
+        if self._usuario_editando_id is None:
+            return
+
+        if self._es_usuario_actual() and self._usuario_editando_activo:
+            QMessageBox.warning(
+                self,
+                "Acción no permitida",
+                "No puedes desactivar tu propia cuenta mientras estás en sesión.",
+            )
+            return
+
+        activar = not self._usuario_editando_activo
+        if activar:
+            titulo = "Activar usuario"
+            mensaje = (
+                "¿Activar este usuario?\n\n"
+                "El usuario podrá iniciar sesión nuevamente con sus credenciales."
+            )
+        else:
+            titulo = "Desactivar usuario"
+            mensaje = (
+                "¿Desactivar este usuario?\n\n"
+                "El usuario no podrá iniciar sesión, pero sus reportes e historial "
+                "se conservarán."
+            )
+
+        respuesta = QMessageBox.question(
+            self,
+            titulo,
+            mensaje,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if respuesta != QMessageBox.StandardButton.Yes:
+            return
+
+        user_id = self._usuario_editando_id
+        self.btn_estado_usuario.setEnabled(False)
+        self.btn_estado_usuario.setText("Actualizando...")
+        try:
+            ok, msg, actualizado = self._controller.cambiar_estado_usuario(
+                user_id,
+                activar,
+            )
+            if not ok:
+                QMessageBox.warning(self, "No fue posible cambiar el estado", msg)
+                return
+
+            QMessageBox.information(self, "Estado actualizado", msg)
+            self.refrescar(seleccionar_usuario_id=user_id)
+            if actualizado:
+                self._cargar_edicion(actualizado)
+        finally:
+            self._actualizar_estado_edicion()
+
     def _seleccionar_usuario_por_id(self, user_id: int) -> bool:
         for row in range(self.tabla_usuarios.rowCount()):
             usuario = self._usuario_desde_fila(row)
@@ -503,6 +596,41 @@ class UserFormView(QWidget):
             return int(value)
         except (TypeError, ValueError):
             return None
+
+    def _usuario_activo(self, usuario: dict) -> bool:
+        return bool(usuario.get("is_active", True))
+
+    def _actualizar_estado_edicion(self) -> None:
+        if self._usuario_editando_id is None:
+            self.lbl_edit_estado.setText("—")
+            self.btn_estado_usuario.setText("Desactivar usuario")
+            self.btn_estado_usuario.setEnabled(False)
+            return
+
+        if self._usuario_editando_activo:
+            self.lbl_edit_estado.setText("Activo")
+            self.lbl_edit_estado.setStyleSheet("color: #16812C; font-size: 13px;")
+            self.btn_estado_usuario.setText("Desactivar usuario")
+            estilizar_boton(self.btn_estado_usuario, "danger")
+            self.btn_estado_usuario.setEnabled(not self._es_usuario_actual())
+            if self._es_usuario_actual():
+                self.btn_estado_usuario.setToolTip(
+                    "No puedes desactivar tu propia cuenta mientras estás en sesión."
+                )
+            else:
+                self.btn_estado_usuario.setToolTip("")
+        else:
+            self.lbl_edit_estado.setText("Inactivo")
+            self.lbl_edit_estado.setStyleSheet("color: #D92D20; font-size: 13px;")
+            self.btn_estado_usuario.setText("Activar usuario")
+            estilizar_boton(self.btn_estado_usuario, "success")
+            self.btn_estado_usuario.setEnabled(True)
+            self.btn_estado_usuario.setToolTip("")
+
+    def _es_usuario_actual(self) -> bool:
+        if self._usuario_actual is None or self._usuario_actual.id is None:
+            return False
+        return self._usuario_editando_id == self._usuario_actual.id
 
     def _guardar(self) -> None:
         self.btn_guardar.setEnabled(False)

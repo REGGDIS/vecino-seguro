@@ -254,6 +254,7 @@ class MainWindow(QMainWindow):
         self.dashboard.set_usuario(usuario)
         self.form_view.set_usuario(usuario)
         self.list_view.set_usuario(usuario)
+        self.user_form_view.set_usuario(usuario)
 
         is_admin = usuario.rol == Rol.ADMIN
         self.admin_section.setVisible(is_admin)

@@ -5,6 +5,7 @@ from passlib.context import CryptContext
 
 from app.modules.users.repository import UserRepository
 from app.modules.users.schemas import (
+    UserActiveUpdateRequest,
     UserCreateRequest,
     UserCreateResponse,
     UserListItem,
@@ -31,6 +32,10 @@ class InvalidRoleError(ValueError):
 
 class UserNotFoundError(LookupError):
     """Indica que el usuario solicitado no existe."""
+
+
+class UserActivationError(ValueError):
+    """Indica que no se puede cambiar el estado activo del usuario."""
 
 
 class UserService:
@@ -115,10 +120,21 @@ class UserService:
         if not self.repository.role_exists(role_id):
             raise InvalidRoleError("El rol indicado no existe")
 
-        if self.repository.find_by_id(user_id) is None:
+        existing_user = self.repository.find_by_id(user_id)
+        if existing_user is None:
             raise UserNotFoundError("Usuario no encontrado")
         if self.repository.find_by_email_excluding_user(email, user_id) is not None:
             raise UserAlreadyExistsError("Ya existe otro usuario con ese email")
+
+        if (
+            int(existing_user["role_id"]) == 1
+            and bool(existing_user.get("is_active", True))
+            and role_id != 1
+            and self.repository.count_active_admins() <= 1
+        ):
+            raise UserActivationError(
+                "No es posible quitar el rol al último administrador activo"
+            )
 
         try:
             updated = self.repository.update_user(
@@ -134,6 +150,35 @@ class UserService:
                 ) from exc
             raise
 
+        if updated is None:
+            raise UserNotFoundError("Usuario no encontrado")
+        return updated
+
+    def update_active_status(
+        self,
+        user_id: int,
+        request: UserActiveUpdateRequest,
+    ) -> UserListItem:
+        """Activa o desactiva un usuario sin eliminarlo de la base."""
+        if user_id <= 0:
+            raise InvalidUserDataError("ID de usuario inválido")
+
+        user = self.repository.find_by_id(user_id)
+        if user is None:
+            raise UserNotFoundError("Usuario no encontrado")
+
+        next_is_active = bool(request.is_active)
+        is_admin = int(user["role_id"]) == 1
+        is_currently_active = bool(user.get("is_active", True))
+
+        if is_admin and is_currently_active and not next_is_active:
+            active_admins = self.repository.count_active_admins()
+            if active_admins <= 1:
+                raise UserActivationError(
+                    "No es posible desactivar el último administrador activo"
+                )
+
+        updated = self.repository.update_active_status(user_id, next_is_active)
         if updated is None:
             raise UserNotFoundError("Usuario no encontrado")
         return updated

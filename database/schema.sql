@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS users (
   email         VARCHAR(150) NOT NULL UNIQUE COMMENT 'Correo electrónico único',
   password_hash VARCHAR(255) NOT NULL        COMMENT 'Hash seguro de la contraseña (bcrypt/argon2)',
   role_id       INT          NOT NULL        COMMENT 'Rol asignado al usuario',
+  is_active     TINYINT(1)   NOT NULL DEFAULT 1 COMMENT 'Indica si el usuario puede iniciar sesión',
   created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_users_roles
@@ -103,6 +104,7 @@ CREATE TABLE IF NOT EXISTS emergency_status_history (
 --    ordenar por fecha de creación o auditar cambios por usuario.
 -- -----------------------------------------------------------------------------
 CREATE INDEX idx_users_role_id              ON users(role_id);
+CREATE INDEX idx_users_is_active            ON users(is_active);
 CREATE INDEX idx_emergencies_user_id        ON emergencies(user_id);
 CREATE INDEX idx_emergencies_status         ON emergencies(status);
 CREATE INDEX idx_emergencies_urgency_level  ON emergencies(urgency_level);
