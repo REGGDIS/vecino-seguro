@@ -28,6 +28,8 @@ class UserFormView(QWidget):
     def __init__(self, controller: UserController | None = None) -> None:
         super().__init__()
         self._controller = controller or UserController()
+        self._usuarios: list[dict] = []
+        self._usuario_editando_id: int | None = None
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -186,6 +188,7 @@ class UserFormView(QWidget):
         self.tabla_usuarios.setSelectionMode(QTableWidget.SingleSelection)
         self.tabla_usuarios.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tabla_usuarios.setAlternatingRowColors(False)
+        self.tabla_usuarios.itemSelectionChanged.connect(self._on_usuario_seleccionado)
         header = self.tabla_usuarios.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
@@ -195,6 +198,86 @@ class UserFormView(QWidget):
         self.tabla_usuarios.setMinimumHeight(240)
         table_card_lay.addWidget(self.tabla_usuarios)
         outer.addWidget(table_card)
+
+        edit_card = QFrame()
+        edit_card.setObjectName("card")
+        edit_lay = QVBoxLayout(edit_card)
+        edit_lay.setContentsMargins(24, 22, 24, 24)
+        edit_lay.setSpacing(14)
+
+        edit_title = QLabel("Editar usuario seleccionado")
+        edit_title.setObjectName("h1")
+        edit_lay.addWidget(edit_title)
+
+        self.lbl_estado_edicion = QLabel(
+            "Selecciona un usuario del listado para editar sus datos."
+        )
+        self.lbl_estado_edicion.setWordWrap(True)
+        self.lbl_estado_edicion.setStyleSheet("color: #52616B; font-size: 12px;")
+        edit_lay.addWidget(self.lbl_estado_edicion)
+
+        referencia = QHBoxLayout()
+        referencia.setSpacing(20)
+        col_id = QVBoxLayout()
+        col_id.setSpacing(6)
+        col_id.addWidget(self._lbl("ID"))
+        self.lbl_edit_id = QLabel("—")
+        self.lbl_edit_id.setStyleSheet("color: #102A43; font-size: 13px;")
+        col_id.addWidget(self.lbl_edit_id)
+        referencia.addLayout(col_id, 1)
+
+        col_rut = QVBoxLayout()
+        col_rut.setSpacing(6)
+        col_rut.addWidget(self._lbl("RUT"))
+        self.lbl_edit_rut = QLabel("—")
+        self.lbl_edit_rut.setStyleSheet("color: #102A43; font-size: 13px;")
+        col_rut.addWidget(self.lbl_edit_rut)
+        referencia.addLayout(col_rut, 3)
+        edit_lay.addLayout(referencia)
+
+        campo_edit_nombre = QVBoxLayout()
+        campo_edit_nombre.setSpacing(8)
+        campo_edit_nombre.addWidget(self._lbl("Nombre completo *"))
+        self.input_edit_nombre = QLineEdit()
+        self.input_edit_nombre.setMinimumHeight(36)
+        self.input_edit_nombre.setPlaceholderText("Nombre completo")
+        campo_edit_nombre.addWidget(self.input_edit_nombre)
+        edit_lay.addLayout(campo_edit_nombre)
+
+        campo_edit_email = QVBoxLayout()
+        campo_edit_email.setSpacing(8)
+        campo_edit_email.addWidget(self._lbl("Email *"))
+        self.input_edit_email = QLineEdit()
+        self.input_edit_email.setMinimumHeight(36)
+        self.input_edit_email.setPlaceholderText("correo@vecinoseguro.cl")
+        campo_edit_email.addWidget(self.input_edit_email)
+        edit_lay.addLayout(campo_edit_email)
+
+        campo_edit_rol = QVBoxLayout()
+        campo_edit_rol.setSpacing(8)
+        campo_edit_rol.addWidget(self._lbl("Rol *"))
+        self.cb_edit_rol = QComboBox()
+        self.cb_edit_rol.addItem("Vecino", 2)
+        self.cb_edit_rol.addItem("Administrador", 1)
+        self.cb_edit_rol.setMinimumHeight(36)
+        campo_edit_rol.addWidget(self.cb_edit_rol)
+        edit_lay.addLayout(campo_edit_rol)
+
+        edit_buttons = QHBoxLayout()
+        edit_buttons.addStretch()
+        self.btn_cancelar_edicion = QPushButton("Cancelar edición")
+        estilizar_boton(self.btn_cancelar_edicion, "secondary")
+        self.btn_cancelar_edicion.clicked.connect(self._cancelar_edicion)
+        edit_buttons.addWidget(self.btn_cancelar_edicion)
+
+        self.btn_guardar_edicion = QPushButton("Guardar cambios")
+        estilizar_boton(self.btn_guardar_edicion, "primary")
+        self.btn_guardar_edicion.clicked.connect(self._guardar_edicion)
+        edit_buttons.addWidget(self.btn_guardar_edicion)
+        edit_lay.addLayout(edit_buttons)
+
+        outer.addWidget(edit_card)
+        self._set_edicion_habilitada(False)
         outer.addStretch()
 
         scroll.setWidget(content)
@@ -212,14 +295,21 @@ class UserFormView(QWidget):
         self.input_password.clear()
         self.cb_rol.setCurrentIndex(0)
 
-    def refrescar(self) -> None:
+    def refrescar(self, seleccionar_usuario_id: int | None = None) -> None:
         self.btn_refrescar.setEnabled(False)
         self.lbl_estado_listado.setText("Cargando usuarios registrados...")
+        usuario_a_seleccionar = (
+            seleccionar_usuario_id
+            if seleccionar_usuario_id is not None
+            else self._usuario_editando_id
+        )
         try:
             ok, msg, usuarios = self._controller.listar_usuarios()
             if not ok:
+                self._usuarios = []
                 self.tabla_usuarios.setRowCount(0)
                 self.lbl_estado_listado.setText(msg)
+                self._limpiar_edicion()
                 return
 
             self._cargar_tabla(usuarios)
@@ -227,12 +317,18 @@ class UserFormView(QWidget):
                 self.lbl_estado_listado.setText(
                     f"{len(usuarios)} usuario(s) registrado(s)."
                 )
+                if usuario_a_seleccionar is not None:
+                    if not self._seleccionar_usuario_por_id(usuario_a_seleccionar):
+                        self._limpiar_edicion()
             else:
                 self.lbl_estado_listado.setText("No hay usuarios registrados.")
+                self._limpiar_edicion()
         finally:
             self.btn_refrescar.setEnabled(True)
 
     def _cargar_tabla(self, usuarios: list[dict]) -> None:
+        self._usuarios = usuarios
+        senales_bloqueadas = self.tabla_usuarios.blockSignals(True)
         self.tabla_usuarios.setRowCount(len(usuarios))
         for row, usuario in enumerate(usuarios):
             self._set_cell(
@@ -242,6 +338,7 @@ class UserFormView(QWidget):
                 align=Qt.AlignCenter,
                 color="#52616B",
                 weight=600,
+                data=usuario,
             )
             self._set_cell(row, 1, str(usuario.get("rut", "")))
             self._set_cell(row, 2, str(usuario.get("full_name", "")))
@@ -254,6 +351,7 @@ class UserFormView(QWidget):
                 weight=600,
             )
             self.tabla_usuarios.setRowHeight(row, 38)
+        self.tabla_usuarios.blockSignals(senales_bloqueadas)
 
     def _set_cell(
         self,
@@ -263,6 +361,7 @@ class UserFormView(QWidget):
         align=Qt.AlignLeft | Qt.AlignVCenter,
         color: str | None = None,
         weight: int = 400,
+        data: object | None = None,
     ) -> None:
         item = QTableWidgetItem(texto)
         item.setTextAlignment(align)
@@ -276,6 +375,8 @@ class UserFormView(QWidget):
         else:
             font.setWeight(QFont.Weight.Normal)
         item.setFont(font)
+        if data is not None:
+            item.setData(Qt.UserRole, data)
         self.tabla_usuarios.setItem(row, col, item)
 
     def _nombre_rol(self, role: object) -> str:
@@ -285,6 +386,123 @@ class UserFormView(QWidget):
         if texto.lower() == "vecino":
             return "Vecino"
         return texto
+
+    def _on_usuario_seleccionado(self) -> None:
+        rows = self.tabla_usuarios.selectionModel().selectedRows()
+        if not rows:
+            self._limpiar_edicion()
+            return
+
+        usuario = self._usuario_desde_fila(rows[0].row())
+        if usuario is None:
+            self._limpiar_edicion()
+            return
+        self._cargar_edicion(usuario)
+
+    def _usuario_desde_fila(self, row: int) -> dict | None:
+        item = self.tabla_usuarios.item(row, 0)
+        if item is None:
+            return None
+        usuario = item.data(Qt.UserRole)
+        return usuario if isinstance(usuario, dict) else None
+
+    def _cargar_edicion(self, usuario: dict) -> None:
+        user_id = self._int_or_none(usuario.get("id"))
+        if user_id is None:
+            self._limpiar_edicion()
+            return
+
+        self._usuario_editando_id = user_id
+        self.lbl_edit_id.setText(str(user_id))
+        self.lbl_edit_rut.setText(str(usuario.get("rut", "")))
+        self.input_edit_nombre.setText(str(usuario.get("full_name", "")))
+        self.input_edit_email.setText(str(usuario.get("email", "")))
+
+        role_id = self._int_or_none(usuario.get("role_id")) or 2
+        idx = self.cb_edit_rol.findData(role_id)
+        self.cb_edit_rol.setCurrentIndex(idx if idx >= 0 else 0)
+
+        self.lbl_estado_edicion.setText(
+            "Puedes editar nombre completo, email y rol. El ID y RUT son solo referencia."
+        )
+        self._set_edicion_habilitada(True)
+
+    def _limpiar_edicion(self) -> None:
+        self._usuario_editando_id = None
+        self.lbl_edit_id.setText("—")
+        self.lbl_edit_rut.setText("—")
+        self.input_edit_nombre.clear()
+        self.input_edit_email.clear()
+        self.cb_edit_rol.setCurrentIndex(0)
+        self.lbl_estado_edicion.setText(
+            "Selecciona un usuario del listado para editar sus datos."
+        )
+        self._set_edicion_habilitada(False)
+
+    def _set_edicion_habilitada(self, habilitada: bool) -> None:
+        self.input_edit_nombre.setEnabled(habilitada)
+        self.input_edit_email.setEnabled(habilitada)
+        self.cb_edit_rol.setEnabled(habilitada)
+        self.btn_guardar_edicion.setEnabled(habilitada)
+        self.btn_cancelar_edicion.setEnabled(habilitada)
+
+    def _cancelar_edicion(self) -> None:
+        senales_bloqueadas = self.tabla_usuarios.blockSignals(True)
+        self.tabla_usuarios.clearSelection()
+        self.tabla_usuarios.blockSignals(senales_bloqueadas)
+        self._limpiar_edicion()
+
+    def _guardar_edicion(self) -> None:
+        if self._usuario_editando_id is None:
+            QMessageBox.warning(
+                self,
+                "Sin usuario seleccionado",
+                "Selecciona un usuario del listado antes de guardar cambios.",
+            )
+            return
+
+        user_id = self._usuario_editando_id
+        self.btn_guardar_edicion.setEnabled(False)
+        self.btn_guardar_edicion.setText("Guardando...")
+        try:
+            ok, msg, actualizado = self._controller.editar_usuario(
+                user_id=user_id,
+                full_name=self.input_edit_nombre.text(),
+                email=self.input_edit_email.text(),
+                role_id=int(self.cb_edit_rol.currentData()),
+            )
+            if not ok:
+                QMessageBox.warning(self, "No fue posible editar el usuario", msg)
+                return
+
+            nombre = (
+                actualizado.get("full_name", self.input_edit_nombre.text().strip())
+                if actualizado
+                else self.input_edit_nombre.text().strip()
+            )
+            QMessageBox.information(
+                self,
+                "Usuario actualizado",
+                f"Usuario actualizado correctamente.\n\nNombre: {nombre}",
+            )
+            self.refrescar(seleccionar_usuario_id=user_id)
+        finally:
+            self.btn_guardar_edicion.setText("Guardar cambios")
+            self.btn_guardar_edicion.setEnabled(self._usuario_editando_id is not None)
+
+    def _seleccionar_usuario_por_id(self, user_id: int) -> bool:
+        for row in range(self.tabla_usuarios.rowCount()):
+            usuario = self._usuario_desde_fila(row)
+            if usuario and self._int_or_none(usuario.get("id")) == user_id:
+                self.tabla_usuarios.selectRow(row)
+                return True
+        return False
+
+    def _int_or_none(self, value: object) -> int | None:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
 
     def _guardar(self) -> None:
         self.btn_guardar.setEnabled(False)

@@ -95,6 +95,14 @@ class ApiClient:
         """Crea un usuario real en el backend FastAPI."""
         return self._request_json("POST", "/api/v1/users/", json=payload)
 
+    def update_user(self, user_id: int, payload: dict) -> dict:
+        """Actualiza datos básicos de un usuario real en el backend."""
+        return self._request_json(
+            "PATCH",
+            f"/api/v1/users/{user_id}",
+            json=payload,
+        )
+
     def update_emergency_status(self, emergency_id: int, payload: dict) -> dict:
         """Actualiza el estado de una emergencia real en el backend."""
         return self._request_json(

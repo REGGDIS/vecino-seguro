@@ -63,9 +63,51 @@ class UserController:
             return False, "No fue posible cargar el listado de usuarios.", []
         return True, "", usuarios
 
+    def editar_usuario(
+        self,
+        user_id: int,
+        full_name: str,
+        email: str,
+        role_id: int,
+    ) -> tuple[bool, str, dict | None]:
+        """Valida y solicita la edición básica de un usuario."""
+        nombre_limpio = full_name.strip()
+        email_limpio = email.strip().lower()
+
+        if user_id <= 0:
+            return False, "Debe seleccionar un usuario válido.", None
+        if not nombre_limpio:
+            return False, "El nombre completo es obligatorio.", None
+        if not email_limpio:
+            return False, "El email es obligatorio.", None
+        if "@" not in email_limpio or "." not in email_limpio.rsplit("@", 1)[-1]:
+            return False, "El email no tiene un formato válido.", None
+        if role_id not in VALID_ROLE_IDS:
+            return False, "Debe seleccionar un rol válido.", None
+
+        payload = {
+            "full_name": nombre_limpio,
+            "email": email_limpio,
+            "role_id": role_id,
+        }
+        try:
+            actualizado = self._api.update_user(user_id, payload)
+            return True, "Usuario actualizado correctamente.", actualizado
+        except ApiClientError as exc:
+            return False, self._mensaje_edicion_error(exc), None
+
     def _mensaje_api_error(self, exc: ApiClientError) -> str:
         if isinstance(exc.detail, str) and exc.detail:
             return exc.detail
         if exc.status_code == 409:
             return "Ya existe un usuario con ese RUT o email."
+        return exc.message
+
+    def _mensaje_edicion_error(self, exc: ApiClientError) -> str:
+        if isinstance(exc.detail, str) and exc.detail:
+            return exc.detail
+        if exc.status_code == 404:
+            return "Usuario no encontrado."
+        if exc.status_code == 409:
+            return "Ya existe otro usuario con ese email."
         return exc.message

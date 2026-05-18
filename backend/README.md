@@ -150,6 +150,7 @@ GET /api/v1/system/info
 POST /api/v1/auth/login
 GET /api/v1/users/
 POST /api/v1/users/
+PATCH /api/v1/users/{user_id}
 GET /api/v1/emergencies/
 GET /api/v1/emergencies/summary
 GET /api/v1/emergencies/recent?limit=4
@@ -250,7 +251,7 @@ Body de prueba para vecino:
 
 # Gestión básica de usuarios
 
-El módulo `users` permite listar y crear usuarios reales desde el panel
+El módulo `users` permite listar, crear y editar usuarios reales desde el panel
 administrador desktop.
 
 ## Listar usuarios
@@ -346,6 +347,59 @@ Respuestas esperadas:
 
 Limitación temporal: este endpoint aún no exige token ni permisos backend. Por
 ahora el acceso se restringe desde la app desktop mostrando el formulario solo a
+usuarios con rol administrador. La autorización backend avanzada queda para una
+etapa posterior.
+
+## Editar usuarios
+
+Endpoint:
+
+```text
+PATCH /api/v1/users/{user_id}
+```
+
+Permite actualizar solo datos básicos del usuario:
+
+* nombre completo;
+* email;
+* rol.
+
+No permite editar RUT ni contraseña, y la respuesta nunca incluye `password` ni
+`password_hash`.
+
+Body de ejemplo:
+
+```json
+{
+  "full_name": "Nombre Actualizado",
+  "email": "correo.actualizado@vecinoseguro.cl",
+  "role_id": 2
+}
+```
+
+Respuesta segura:
+
+```json
+{
+  "id": 5,
+  "rut": "12345678-5",
+  "full_name": "Nombre Actualizado",
+  "email": "correo.actualizado@vecinoseguro.cl",
+  "role_id": 2,
+  "role": "vecino"
+}
+```
+
+Respuestas esperadas:
+
+* `200 OK`: usuario actualizado.
+* `400 Bad Request`: nombre, email o rol inválido.
+* `404 Not Found`: usuario inexistente.
+* `409 Conflict`: email perteneciente a otro usuario.
+* `500 Internal Server Error`: error no controlado.
+
+Limitación temporal: este endpoint aún no exige token ni permisos backend. Por
+ahora el acceso se restringe desde la app desktop mostrando la vista solo a
 usuarios con rol administrador. La autorización backend avanzada queda para una
 etapa posterior.
 
@@ -642,13 +696,16 @@ Ejemplo de respuesta:
 6. Probar `POST /api/v1/users/` con usuario vecino y administrador.
 7. Probar errores de RUT inválido, RUT duplicado, email duplicado y contraseña corta.
 8. Confirmar que la respuesta de creación no incluya `password_hash`.
-9. Probar `GET /api/v1/emergencies/`.
-10. Probar `GET /api/v1/emergencies/summary`.
-11. Probar `GET /api/v1/emergencies/recent?limit=4`.
-12. Probar `GET /api/v1/emergencies/catalogs`.
-13. Probar `GET /api/v1/reports/summary`.
-14. Probar `GET /api/v1/reports/dashboard-cards`.
-15. Verificar que las respuestas sean coherentes con los datos cargados desde `database/seed.sql`.
+9. Probar `PATCH /api/v1/users/{user_id}` con nombre, email y rol válidos.
+10. Probar errores de usuario inexistente, email duplicado y rol inválido.
+11. Confirmar que la respuesta de edición no incluya `password_hash`.
+12. Probar `GET /api/v1/emergencies/`.
+13. Probar `GET /api/v1/emergencies/summary`.
+14. Probar `GET /api/v1/emergencies/recent?limit=4`.
+15. Probar `GET /api/v1/emergencies/catalogs`.
+16. Probar `GET /api/v1/reports/summary`.
+17. Probar `GET /api/v1/reports/dashboard-cards`.
+18. Verificar que las respuestas sean coherentes con los datos cargados desde `database/seed.sql`.
 
 ---
 
